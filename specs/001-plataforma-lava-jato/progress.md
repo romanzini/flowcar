@@ -134,6 +134,43 @@ Started: 2026-05-08 16:18:14
 ---
 
 ---
+## Iteration 5 - 2026-05-08
+**User Story**: Phase 5 — US-002 Gestão de Clientes e Veículos (P2)
+**Tasks Completed**: 
+- [x] T044: src/lib/validations/customer.ts — customerCreateSchema / customerUpdateSchema (Zod)
+- [x] T045: src/lib/validations/vehicle.ts — vehicleCreateSchema / vehicleUpdateSchema with plate uppercase transform + regex
+- [x] T046: src/server/services/customer.service.ts — list (masked cpfCnpj), getById (unmasked), create, update, deactivate (blocked if active OS or AGUARDANDO_ASSINATURA contracts)
+- [x] T047: src/server/services/vehicle.service.ts — listByCustomer, getById, create (plate uniqueness per tenant), update, deactivate (blocked if active OS)
+- [x] T048: src/app/api/clientes/route.ts — GET (list + ?search) + POST
+- [x] T049: src/app/api/clientes/[id]/route.ts — GET + PATCH + DELETE
+- [x] T050: src/app/api/veiculos/route.ts — GET (list by ?customerId) + POST
+- [x] T051: src/app/api/veiculos/[id]/route.ts — GET + PATCH + DELETE
+- [x] T052: src/app/(dashboard)/clientes/page.tsx — debounced search, create button, list table
+- [x] T053: src/app/(dashboard)/clientes/[id]/page.tsx — customer detail + vehicles list with add/edit/deactivate
+- [x] T054: src/components/forms/CustomerForm.tsx — RHF + Zod, all optional fields
+- [x] T055: src/components/forms/VehicleForm.tsx — plate auto-uppercase, RHF + Zod
+**Tasks Remaining in Story**: None - story complete
+**Commit**: f0edcee
+**Files Changed**: 
+- src/lib/validations/customer.ts
+- src/lib/validations/vehicle.ts
+- src/server/services/customer.service.ts
+- src/server/services/vehicle.service.ts
+- src/app/api/clientes/route.ts
+- src/app/api/clientes/[id]/route.ts
+- src/app/api/veiculos/route.ts
+- src/app/api/veiculos/[id]/route.ts
+- src/app/(dashboard)/clientes/page.tsx
+- src/app/(dashboard)/clientes/[id]/page.tsx
+- src/components/forms/CustomerForm.tsx
+- src/components/forms/VehicleForm.tsx
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- CPF masking: `***.{d3-5}.{d6-8}-**`; CNPJ masking: `**.{d2-4}.{d5-7}/{d8-11}-**` (from raw digit string)
+- Zod `.transform().pipe()` is required for plate normalization (toUpperCase + strip non-alphanumeric) before regex validation
+- `useCallback` with `authFetch` dependency is needed for debounced search to avoid stale closure issues in Next.js App Router client components
+
+---
 ## Iteration 4 - 2026-05-08
 **User Story**: Phase 4 — US-001 Autenticação e Controle de Acesso por Papel (P1)
 **Tasks Completed**: 

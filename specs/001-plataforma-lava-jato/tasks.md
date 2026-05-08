@@ -132,21 +132,21 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Independent Test**: Create OS for a vehicle, move to EM_ANDAMENTO (verify startedAt), move to CONCLUÍDO (verify queue recalculation), upload photo (verify pre-signed URL access).
 
-- [ ] T056 [P] [US3] Create `src/lib/validations/service-order.ts` with OS create, update, status transition, and item (service/product) Zod schemas
-- [ ] T057 [P] [US3] Create `src/server/services/queue.service.ts` with `insertQueueEntry`, `promoteToInProgress`, `removeFromQueue`, and `resequencePositions` — dense sequential positions for AGUARDANDO entries; EM_ANDAMENTO entries get `position = null`
-- [ ] T058 [P] [US3] Create `src/server/services/service-order.service.ts` with: `createOS` (blocks if vehicle has active OS, generates OS-XXXX number, inserts QueueEntry), `transitionStatus` (AGUARDANDO→EM_ANDAMENTO records startedAt; EM_ANDAMENTO→CONCLUIDO records completedAt + removes QueueEntry; any→CANCELADO records cancelledAt + removes QueueEntry; all removals trigger resequence), `addItem`, `removeItem`, `getById`, `list`
-- [ ] T059 [US3] Create `src/app/api/ordens-servico/route.ts` GET (list with status/date/client filters) + POST OS endpoints
-- [ ] T060 [US3] Create `src/app/api/ordens-servico/[id]/route.ts` GET + PATCH OS endpoints (assert tenantId ownership)
-- [ ] T061 [US3] Create `src/app/api/ordens-servico/[id]/status/route.ts` PATCH status transition endpoint
-- [ ] T062 [US3] Create `src/app/api/ordens-servico/[id]/items/route.ts` POST (add item) + DELETE by itemId endpoints
-- [ ] T063 Create `src/app/api/uploads/route.ts` POST `/api/uploads` — validates file type/size (frontend validation doubles as safeguard: backend returns 422 on violation), stores to MinIO with `{tenantId}/{categoria}/{uuid}.{ext}`, persists FileUpload record — **[SEC-001]** calls T017 magic bytes validation before any storage operation; rejects if magic bytes mismatch even when `Content-Type` appears valid — **[SEC-010]** calls `logFileUpload(tenantId, type, size)` after successful MinIO upload
-- [ ] T064 [P] [US3] Create `src/app/(dashboard)/ordens-servico/page.tsx` OS list page with status filter tabs and create button
-- [ ] T065 [US3] Create `src/app/(dashboard)/ordens-servico/nova/page.tsx` new OS form page (client/vehicle selector, service/product item rows)
-- [ ] T066 [US3] Create `src/app/(dashboard)/ordens-servico/[id]/page.tsx` OS detail page with status action buttons, items list, and photos gallery
-- [ ] T067 [US3] Create `src/components/forms/ServiceOrderForm.tsx` OS form with client/vehicle async search, multi-item rows (serviceType or product selector, qty, price), and total calculation
-- [ ] T068 [US3] Create `src/components/shared/FileUpload.tsx` reusable upload component with frontend type/size validation, progress indicator, and error display
-- [ ] T069 [US3] Create `src/components/shared/PhotoGallery.tsx` photo gallery component fetching pre-signed URLs on demand
-- [ ] T070 [US3] Create `src/server/queries/queue-internal.ts` query for internal queue management view (all active entries ordered by position)
+- [x] T056 [P] [US3] Create `src/lib/validations/service-order.ts` with OS create, update, status transition, and item (service/product) Zod schemas
+- [x] T057 [P] [US3] Create `src/server/services/queue.service.ts` with `insertQueueEntry`, `promoteToInProgress`, `removeFromQueue`, and `resequencePositions` — dense sequential positions for AGUARDANDO entries; EM_ANDAMENTO entries get `position = null`
+- [x] T058 [P] [US3] Create `src/server/services/service-order.service.ts` with: `createOS` (blocks if vehicle has active OS, generates OS-XXXX number, inserts QueueEntry), `transitionStatus` (AGUARDANDO→EM_ANDAMENTO records startedAt; EM_ANDAMENTO→CONCLUIDO records completedAt + removes QueueEntry; any→CANCELADO records cancelledAt + removes QueueEntry; all removals trigger resequence), `addItem`, `removeItem`, `getById`, `list`
+- [x] T059 [US3] Create `src/app/api/ordens-servico/route.ts` GET (list with status/date/client filters) + POST OS endpoints
+- [x] T060 [US3] Create `src/app/api/ordens-servico/[id]/route.ts` GET + PATCH OS endpoints (assert tenantId ownership)
+- [x] T061 [US3] Create `src/app/api/ordens-servico/[id]/status/route.ts` PATCH status transition endpoint
+- [x] T062 [US3] Create `src/app/api/ordens-servico/[id]/items/route.ts` POST (add item) + DELETE by itemId endpoints
+- [x] T063 Create `src/app/api/uploads/route.ts` POST `/api/uploads` — validates file type/size (frontend validation doubles as safeguard: backend returns 422 on violation), stores to MinIO with `{tenantId}/{categoria}/{uuid}.{ext}`, persists FileUpload record — **[SEC-001]** calls T017 magic bytes validation before any storage operation; rejects if magic bytes mismatch even when `Content-Type` appears valid — **[SEC-010]** calls `logFileUpload(tenantId, type, size)` after successful MinIO upload
+- [x] T064 [P] [US3] Create `src/app/(dashboard)/ordens-servico/page.tsx` OS list page with status filter tabs and create button
+- [x] T065 [US3] Create `src/app/(dashboard)/ordens-servico/nova/page.tsx` new OS form page (client/vehicle selector, service/product item rows)
+- [x] T066 [US3] Create `src/app/(dashboard)/ordens-servico/[id]/page.tsx` OS detail page with status action buttons, items list, and photos gallery
+- [x] T067 [US3] Create `src/components/forms/ServiceOrderForm.tsx` OS form with client/vehicle async search, multi-item rows (serviceType or product selector, qty, price), and total calculation
+- [x] T068 [US3] Create `src/components/shared/FileUpload.tsx` reusable upload component with frontend type/size validation, progress indicator, and error display
+- [x] T069 [US3] Create `src/components/shared/PhotoGallery.tsx` photo gallery component fetching pre-signed URLs on demand
+- [x] T070 [US3] Create `src/server/queries/queue-internal.ts` query for internal queue management view (all active entries ordered by position)
 
 **Checkpoint**: Full OS lifecycle working; queue resequences after every status change; photos uploaded to MinIO and accessible via pre-signed URLs only.
 
