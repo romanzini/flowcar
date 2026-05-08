@@ -171,7 +171,52 @@ Started: 2026-05-08 16:18:14
 - `useCallback` with `authFetch` dependency is needed for debounced search to avoid stale closure issues in Next.js App Router client components
 
 ---
-## Iteration 4 - 2026-05-08
+## Iteration 6 - 2026-05-08
+**User Story**: Phase 6 — US-003 Ordens de Serviço e Fila Interna (P3)
+**Tasks Completed**: 
+- [x] T056: src/lib/validations/service-order.ts — OS create/update/status/item Zod schemas
+- [x] T057: src/server/services/queue.service.ts — insertQueueEntry, promoteToInProgress, removeFromQueue, resequencePositions
+- [x] T058: src/server/services/service-order.service.ts — createOS, transitionStatus, addItem, removeItem, getById, list, updateOS
+- [x] T059: src/app/api/ordens-servico/route.ts — GET (filters) + POST
+- [x] T060: src/app/api/ordens-servico/[id]/route.ts — GET + PATCH
+- [x] T061: src/app/api/ordens-servico/[id]/status/route.ts — PATCH status transition
+- [x] T062: src/app/api/ordens-servico/[id]/items/route.ts — POST (add) + DELETE (remove by itemId query param)
+- [x] T063: src/app/api/uploads/route.ts — multipart upload with magic bytes validation (SEC-001) + logFileUpload (SEC-010); also src/app/api/uploads/[id]/url/route.ts for pre-signed URL
+- [x] T064: src/app/(dashboard)/ordens-servico/page.tsx — status filter tabs, list table
+- [x] T065: src/app/(dashboard)/ordens-servico/nova/page.tsx — new OS form page
+- [x] T066: src/app/(dashboard)/ordens-servico/[id]/page.tsx — detail with status actions, items table, photo gallery
+- [x] T067: src/components/forms/ServiceOrderForm.tsx — client/vehicle async search, multi-item rows, total calc
+- [x] T068: src/components/shared/FileUpload.tsx — type/size frontend validation, progress indicator
+- [x] T069: src/components/shared/PhotoGallery.tsx — pre-signed URL fetch on demand, lightbox
+- [x] T070: src/server/queries/queue-internal.ts — getInternalQueue(tenantId)
+**Tasks Remaining in Story**: None - story complete
+**Commit**: 6048615
+**Files Changed**: 
+- src/lib/validations/service-order.ts
+- src/server/services/queue.service.ts
+- src/server/services/service-order.service.ts
+- src/server/queries/queue-internal.ts
+- src/app/api/ordens-servico/route.ts
+- src/app/api/ordens-servico/[id]/route.ts
+- src/app/api/ordens-servico/[id]/status/route.ts
+- src/app/api/ordens-servico/[id]/items/route.ts
+- src/app/api/uploads/route.ts
+- src/app/api/uploads/[id]/url/route.ts
+- src/app/api/tipos-servico/route.ts
+- src/app/(dashboard)/ordens-servico/page.tsx
+- src/app/(dashboard)/ordens-servico/nova/page.tsx
+- src/app/(dashboard)/ordens-servico/[id]/page.tsx
+- src/components/forms/ServiceOrderForm.tsx
+- src/components/shared/FileUpload.tsx
+- src/components/shared/PhotoGallery.tsx
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- Zod v4 uses `error:` (not `errorMap:`) for custom enum error messages
+- FileUpload → ServiceOrder is many-to-many via `@relation("ServiceOrderFiles")`; connecting via `serviceOrderFiles: { connect: { id: serviceOrderId } }` in prisma.create
+- PhotoGallery uses `<img>` (not `next/image`) due to dynamic MinIO pre-signed URLs — only triggers a warning, not an error
+- Bonus: created `/api/tipos-servico` (GET active service types) and `/api/uploads/[id]/url` (pre-signed URL) as supporting endpoints required by ServiceOrderForm and PhotoGallery
+---
+
 **User Story**: Phase 4 — US-001 Autenticação e Controle de Acesso por Papel (P1)
 **Tasks Completed**: 
 - [x] T032: src/lib/validations/auth.ts — loginRequest, refreshRequest, tokenResponse Zod schemas

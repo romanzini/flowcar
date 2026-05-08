@@ -158,13 +158,13 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Independent Test**: Configure slug, create 3 AGUARDANDO and 1 EM_ANDAMENTO orders, access `/fila/{slug}` anonymously — verify plate masking, correct group assignment, estimated times, and 30-second polling.
 
-- [ ] T071 [P] [US4] Create `src/server/queries/queue-public.ts` — `getPublicQueue(slug)`: looks up tenant by slug, queries active QueueEntries with their OS and vehicle data; groups into EM_ANDAMENTO (label "Em Atendimento", no position) and AGUARDANDO (sequential 1,2,3…); masks plate (ABC-**34); calculates estimated time per AGUARDANDO entry using `SUM(serviceMinutes of entries ahead) / simultaneousSlots`
-- [ ] T072 [US4] Create `src/app/api/fila-publica/[slug]/route.ts` GET public endpoint (no auth) returning queue JSON; returns 404 for unknown slug — **[SEC-004]** apply Redis rate limiting: max 60 requests per IP per minute to prevent abusive polling beyond the 30 s frontend interval; return 429 on excess
-- [ ] T073 [US4] Create `src/app/fila/[slug]/page.tsx` SSR public queue page — fetches initial data server-side; client component handles 30-second polling interval
-- [ ] T074 [US4] Create `src/components/queue/PublicQueueDisplay.tsx` container rendering two sections ("Em Atendimento" and "Aguardando na Fila") and empty-state message when queue has no active vehicles
-- [ ] T075 [US4] Create `src/components/queue/QueueCard.tsx` individual vehicle card showing masked plate, status badge, and estimated wait time
-- [ ] T076 [US4] Create `src/components/queue/QueueRefreshTimer.tsx` 30-second countdown component that triggers data refetch and displays last-updated timestamp
-- [ ] T077 [US4] Create `src/app/fila/[slug]/not-found.tsx` "Lava-jato não encontrado" page for invalid slug
+- [x] T071 [P] [US4] Create `src/server/queries/queue-public.ts` — `getPublicQueue(slug)`: looks up tenant by slug, queries active QueueEntries with their OS and vehicle data; groups into EM_ANDAMENTO (label "Em Atendimento", no position) and AGUARDANDO (sequential 1,2,3…); masks plate (ABC-**34); calculates estimated time per AGUARDANDO entry using `SUM(serviceMinutes of entries ahead) / simultaneousSlots`
+- [x] T072 [US4] Create `src/app/api/fila-publica/[slug]/route.ts` GET public endpoint (no auth) returning queue JSON; returns 404 for unknown slug — **[SEC-004]** apply Redis rate limiting: max 60 requests per IP per minute to prevent abusive polling beyond the 30 s frontend interval; return 429 on excess
+- [x] T073 [US4] Create `src/app/fila/[slug]/page.tsx` SSR public queue page — fetches initial data server-side; client component handles 30-second polling interval
+- [x] T074 [US4] Create `src/components/queue/PublicQueueDisplay.tsx` container rendering two sections ("Em Atendimento" and "Aguardando na Fila") and empty-state message when queue has no active vehicles
+- [x] T075 [US4] Create `src/components/queue/QueueCard.tsx` individual vehicle card showing masked plate, status badge, and estimated wait time
+- [x] T076 [US4] Create `src/components/queue/QueueRefreshTimer.tsx` 30-second countdown component that triggers data refetch and displays last-updated timestamp
+- [x] T077 [US4] Create `src/app/fila/[slug]/not-found.tsx` "Lava-jato não encontrado" page for invalid slug
 
 **Checkpoint**: `/fila/{slug}` publicly accessible without auth; plates masked; estimated times computed correctly; page auto-refreshes every 30 s.
 
