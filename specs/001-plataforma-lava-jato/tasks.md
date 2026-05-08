@@ -109,18 +109,18 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Independent Test**: Register a customer, add two vehicles, verify plate uniqueness within the tenant (same plate in a different tenant is allowed), edit vehicle, search by name/phone.
 
-- [ ] T044 [P] [US2] Create `src/lib/validations/customer.ts` with customer create/update Zod schemas (name, email, phone, whatsappPhone, cpfCnpj, address; all optional except name)
-- [ ] T045 [P] [US2] Create `src/lib/validations/vehicle.ts` with vehicle create/update Zod schemas (plate normalized to uppercase, brand, model, year, color, customerId)
-- [ ] T046 [P] [US2] Create `src/server/services/customer.service.ts` with list (search by name/phone), getById, create, update, and `deactivate` — deactivation blocked if active OS (AGUARDANDO/EM_ANDAMENTO) or AGUARDANDO_ASSINATURA contracts exist; error lists impeding records — **[SEC-009]** `list()` returns `cpfCnpj` masked (`***.456.789-**` for CPF, `**.345.678/0001-**` for CNPJ) as required by Constitução §3.2 (LGPD); `getById()` returns the full unmasked value
-- [ ] T047 [P] [US2] Create `src/server/services/vehicle.service.ts` with list by customerId, getById, create (enforce `(tenantId, plate)` uniqueness), update, and deactivate (blocked if active OS)
-- [ ] T048 [US2] Create `src/app/api/clientes/route.ts` GET (list + search query param) + POST customer endpoints — **[SEC-009]** GET list responses use `customer.service.list()` which returns masked CPF/CNPJ; POST create returns the new record with masked CPF/CNPJ in response body
-- [ ] T049 [US2] Create `src/app/api/clientes/[id]/route.ts` GET + PATCH + DELETE customer endpoints (assert tenantId ownership)
-- [ ] T050 [US2] Create `src/app/api/veiculos/route.ts` GET (list by customerId) + POST vehicle endpoints
-- [ ] T051 [US2] Create `src/app/api/veiculos/[id]/route.ts` GET + PATCH + DELETE vehicle endpoints (assert tenantId ownership)
-- [ ] T052 [P] [US2] Create `src/app/(dashboard)/clientes/page.tsx` customers list page with real-time search input (debounced) and create button
-- [ ] T053 [US2] Create `src/app/(dashboard)/clientes/[id]/page.tsx` customer detail page showing customer info and linked vehicles list with add/edit/deactivate actions
-- [ ] T054 [US2] Create `src/components/forms/CustomerForm.tsx` customer create/edit form (React Hook Form + Zod, all fields including optional whatsappPhone)
-- [ ] T055 [US2] Create `src/components/forms/VehicleForm.tsx` vehicle create/edit form with plate auto-uppercase normalization
+- [x] T044 [P] [US2] Create `src/lib/validations/customer.ts` with customer create/update Zod schemas (name, email, phone, whatsappPhone, cpfCnpj, address; all optional except name)
+- [x] T045 [P] [US2] Create `src/lib/validations/vehicle.ts` with vehicle create/update Zod schemas (plate normalized to uppercase, brand, model, year, color, customerId)
+- [x] T046 [P] [US2] Create `src/server/services/customer.service.ts` with list (search by name/phone), getById, create, update, and `deactivate` — deactivation blocked if active OS (AGUARDANDO/EM_ANDAMENTO) or AGUARDANDO_ASSINATURA contracts exist; error lists impeding records — **[SEC-009]** `list()` returns `cpfCnpj` masked (`***.456.789-**` for CPF, `**.345.678/0001-**` for CNPJ) as required by Constitução §3.2 (LGPD); `getById()` returns the full unmasked value
+- [x] T047 [P] [US2] Create `src/server/services/vehicle.service.ts` with list by customerId, getById, create (enforce `(tenantId, plate)` uniqueness), update, and deactivate (blocked if active OS)
+- [x] T048 [US2] Create `src/app/api/clientes/route.ts` GET (list + search query param) + POST customer endpoints — **[SEC-009]** GET list responses use `customer.service.list()` which returns masked CPF/CNPJ; POST create returns the new record with masked CPF/CNPJ in response body
+- [x] T049 [US2] Create `src/app/api/clientes/[id]/route.ts` GET + PATCH + DELETE customer endpoints (assert tenantId ownership)
+- [x] T050 [US2] Create `src/app/api/veiculos/route.ts` GET (list by customerId) + POST vehicle endpoints
+- [x] T051 [US2] Create `src/app/api/veiculos/[id]/route.ts` GET + PATCH + DELETE vehicle endpoints (assert tenantId ownership)
+- [x] T052 [P] [US2] Create `src/app/(dashboard)/clientes/page.tsx` customers list page with real-time search input (debounced) and create button
+- [x] T053 [US2] Create `src/app/(dashboard)/clientes/[id]/page.tsx` customer detail page showing customer info and linked vehicles list with add/edit/deactivate actions
+- [x] T054 [US2] Create `src/components/forms/CustomerForm.tsx` customer create/edit form (React Hook Form + Zod, all fields including optional whatsappPhone)
+- [x] T055 [US2] Create `src/components/forms/VehicleForm.tsx` vehicle create/edit form with plate auto-uppercase normalization
 
 **Checkpoint**: Customer CRUD functional; plate uniqueness per tenant enforced; deactivation block working with clear error message.
 

@@ -132,3 +132,44 @@ Started: 2026-05-08 16:18:14
 - withErrorHandler expects a thunk `() => Promise<...>`; route handlers must call `withErrorHandler(async () => { ... })()`
 - Prisma unique constraint violation code is 'P2002'; meta.target array contains the conflicting field names
 ---
+
+---
+## Iteration 4 - 2026-05-08
+**User Story**: Phase 4 — US-001 Autenticação e Controle de Acesso por Papel (P1)
+**Tasks Completed**: 
+- [x] T032: src/lib/validations/auth.ts — loginRequest, refreshRequest, tokenResponse Zod schemas
+- [x] T033: src/server/services/auth.service.ts — login (constant-time bcrypt, rate limit, logLoginSuccess/Failure), logout, refreshToken (rotate)
+- [x] T034: src/app/api/auth/login/route.ts — POST with SEC-005 HttpOnly cookie
+- [x] T035: src/app/api/auth/logout/route.ts — POST revokes refresh token, clears cookie
+- [x] T036: src/app/api/auth/refresh/route.ts — POST rotates refresh token, returns new access token
+- [x] T037: src/app/(auth)/login/page.tsx — SSR login page with refresh_token cookie check
+- [x] T038: src/components/forms/LoginForm.tsx — RHF+Zod login form, no field-specific error leakage
+- [x] T039: src/components/shared/Sidebar.tsx — role-filtered nav (FUNCIONARIO excludes Funcionários, Contratos, Relatórios, Configurações)
+- [x] T040: src/app/(dashboard)/layout.tsx — server-side cookie check + SessionProvider + DashboardAuthGuard
+- [x] T041: src/app/(dashboard)/funcionarios/page.tsx — GERENTE-only employee list with create/edit/deactivate
+- [x] T042: src/components/shared/RBACGuard.tsx — client-side role guard component
+- [x] T043: src/components/forms/EmployeeForm.tsx — employee create/edit form (name, email, password, role, phone)
+**Tasks Remaining in Story**: None - story complete
+**Commit**: 688fb10
+**Files Changed**: 
+- src/lib/validations/auth.ts
+- src/server/services/auth.service.ts
+- src/app/api/auth/login/route.ts
+- src/app/api/auth/logout/route.ts
+- src/app/api/auth/refresh/route.ts
+- src/app/(auth)/login/page.tsx
+- src/components/forms/LoginForm.tsx
+- src/components/shared/Sidebar.tsx
+- src/components/shared/SessionProvider.tsx
+- src/components/shared/DashboardAuthGuard.tsx
+- src/components/shared/RBACGuard.tsx
+- src/app/(dashboard)/layout.tsx
+- src/app/(dashboard)/dashboard/page.tsx
+- src/app/(dashboard)/funcionarios/page.tsx
+- src/components/forms/EmployeeForm.tsx
+**Learnings**:
+- Zod v4 schema types for `zodResolver` require `as any` cast when switching between create (required) and update (optional) schemas in a shared form component
+- Access token stored in sessionStorage (client-side only); SSR dashboard layout checks refresh_token HttpOnly cookie for the initial redirect guard
+- DashboardAuthGuard client component handles the actual token presence check and redirects to /login if no access token in sessionStorage
+- constant-time bcrypt comparison: always run `bcrypt.compare` even when user not found (use dummy hash) to prevent timing attacks that reveal email existence
+---
