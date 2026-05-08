@@ -1,15 +1,15 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (none) → 1.0.0 → 1.0.1
+Version change: (none) → 1.0.0 → 1.0.1 → 1.1.0
 Added sections:
-  - Core Principles (7 principles)
+  - Core Principles (7 principles → 8 principles)
   - Tech Stack Constraints
   - Development Workflow
   - Governance
 Modified principles:
-  - Principle III: expanded to require all Spec Kit documents (spec.md, plan.md,
-    tasks.md, research.md, data-model.md, etc.) to be written in Brazilian Portuguese
+  - Principle III: expanded to require all Spec Kit documents to be written in Brazilian Portuguese
+  - Principle VIII: added (Observability) — MINOR bump
 Removed sections: N/A
 Templates reviewed:
   - .specify/templates/plan-template.md ✅ aligned (Constitution Check gate present)
@@ -116,6 +116,39 @@ MUST be justified by measurable user value.
 **Rationale**: A reproducible, container-based deployment lowers the barrier to
 self-hosting and eliminates "works on my machine" issues.
 
+### VIII. Observabilidade
+
+Toda aplicação DEVE ser observável por padrão, sem instrumentação adicional em cada feature.
+
+**Logs estruturados**:
+- Todos os logs DEVEM ser emitidos em formato JSON com os campos: `timestamp`, `level`
+  (`debug`/`info`/`warn`/`error`), `service` (nome do módulo), `tenantId` (quando
+  disponível), `userId` (quando disponível) e `message`.
+- Nível mínimo em produção: `info`. Nível mínimo em desenvolvimento: `debug`.
+- Dados sensíveis (senhas, hashes, CPF, IP de signatário) NUNCA devem aparecer em logs
+  (ver Security Constitution, seção 7.2).
+
+**Health check**:
+- A aplicação DEVE expor o endpoint `GET /api/health` sem autenticação, retornando
+  HTTP 200 com `{ status: "ok", db: "ok"|"error", storage: "ok"|"error" }` após
+  verificar conexão com PostgreSQL e MinIO.
+- O Docker Compose DEVE configurar `healthcheck` apontando para `/api/health`.
+
+**Métricas de negócio**:
+- O dashboard DEVE exibir KPIs em tempo real derivados de queries ao banco, sem
+  sistema de métricas externo (Prometheus/Grafana são opcionais e de responsabilidade
+  do operador da instância).
+
+**Rastreamento de erros**:
+- Erros não tratados em Route Handlers DEVEM ser capturados por um handler global,
+  logados com stack trace no servidor e retornados ao cliente apenas como mensagem
+  genérica (`{ success: false, error: { code: "INTERNAL_ERROR", message: "Erro interno" } }`).
+- Stack traces NUNCA devem ser expostos nas respostas de API em produção.
+
+**Rationale**: Observabilidade integrada reduz drasticamente o tempo de diagnóstico
+em produção e permite que operadores autossuficientes detectem problemas sem acesso
+ao código-fonte.
+
 ## Tech Stack Constraints
 
 The following versions and libraries are locked for this project. Substitutions
@@ -132,7 +165,7 @@ require an amendment to this constitution.
 | UI | Tailwind CSS + shadcn/ui | 4 |
 | Data Fetching | TanStack React Query | 5 |
 | Forms | React Hook Form + Zod | latest stable |
-| File Storage | Local FS (dev) / MinIO S3 (prod) | — |
+| File Storage | MinIO S3 (all environments) | — |
 | PDF | @react-pdf/renderer | latest stable |
 | Charts | Recharts | latest stable |
 | Containers | Docker + Docker Compose | latest stable |
@@ -175,4 +208,4 @@ any locked dependency above.
   product planning document. When this constitution is silent on a matter, defer to
   `planejamento.md`.
 
-**Version**: 1.0.1 | **Ratified**: 2026-05-08 | **Last Amended**: 2026-05-08
+**Version**: 1.1.0 | **Ratified**: 2026-05-08 | **Last Amended**: 2026-05-08
