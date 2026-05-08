@@ -1,0 +1,410 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  GERENTE
+  FUNCIONARIO
+}
+
+enum ServiceOrderStatus {
+  AGUARDANDO
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+enum QueueStatus {
+  AGUARDANDO
+  EM_ANDAMENTO
+}
+
+enum QuoteStatus {
+  RASCUNHO
+  ENVIADO
+  APROVADO
+  REJEITADO
+  EXPIRADO
+}
+
+enum ContractStatus {
+  RASCUNHO
+  AGUARDANDO_ASSINATURA
+  ASSINADO
+  CANCELADO
+}
+
+enum StockMovementType {
+  ENTRADA
+  SAIDA
+  AJUSTE
+}
+
+enum FileCategory {
+  FOTO_VEICULO
+  FOTO_SERVICO
+  PDF_ORCAMENTO
+  PDF_CONTRATO
+  LOGOTIPO
+  ASSINATURA_CONTRATO
+}
+
+enum NotificationStatus {
+  PENDENTE
+  ENVIANDO
+  ENVIADA
+  FALHA
+}
+
+enum NotificationEvent {
+  FILA_ATUALIZADA
+  OS_CONCLUIDA
+  OS_CANCELADA
+}
+
+enum ServiceOrderItemKind {
+  SERVICO
+  PRODUTO
+}
+
+// ─── Core Entities ────────────────────────────────────────────────────────────
+
+model Tenant {
+  id           String   @id @default(cuid())
+  businessName String
+  slug         String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  config                CarWashConfig?
+  users                 User[]
+  customers             Customer[]
+  vehicles              Vehicle[]
+  serviceTypes          ServiceType[]
+  products              Product[]
+  stockMovements        StockMovement[]
+  quotes                Quote[]
+  contracts             Contract[]
+  serviceOrders         ServiceOrder[]
+  queueEntries          QueueEntry[]
+  fileUploads           FileUpload[]
+  whatsappNotifications WhatsAppNotification[]
+}
+
+model User {
+  id            String    @id @default(cuid())
+  tenantId      String
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          UserRole
+  phone         String?
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  serviceOrders  ServiceOrder[]
+  stockMovements StockMovement[]
+  fileUploads    FileUpload[]
+}
+
+model CarWashConfig {
+  id                String   @id @default(cuid())
+  tenantId          String   @unique
+  simultaneousSlots Int      @default(1)
+  phone             String?
+  address           String?
+  logoFileId        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id])
+  logo   FileUpload? @relation("CarWashConfigLogo", fields: [logoFileId], references: [id])
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  tenantId     String
+  name         String
+  email        String?
+  phone        String?
+  whatsappPhone String?
+  cpfCnpj      String?
+  address      String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id])
+  vehicles              Vehicle[]
+  quotes                Quote[]
+  contracts             Contract[]
+  serviceOrders         ServiceOrder[]
+  whatsappNotifications WhatsAppNotification[]
+
+  @@unique([tenantId, cpfCnpj])
+}
+
+model Vehicle {
+  id        String   @id @default(cuid())
+  tenantId  String
+  customerId String
+  plate     String
+  brand     String?
+  model     String?
+  year      Int?
+  color     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  serviceOrders ServiceOrder[]
+
+  @@unique([tenantId, plate])
+}
+
+model ServiceType {
+  id                String   @id @default(cuid())
+  tenantId          String
+  name              String
+  basePrice         Decimal  @default(0) @db.Decimal(10, 2)
+  estimatedMinutes  Int
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant             Tenant              @relation(fields: [tenantId], references: [id])
+  quoteItems         QuoteItem[]
+  serviceOrderItems  ServiceOrderItem[]
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  tenantId     String
+  name         String
+  unit         String
+  currentStock Decimal  @default(0) @db.Decimal(10, 3)
+  minimumStock Decimal  @default(0) @db.Decimal(10, 3)
+  costPrice    Decimal  @default(0) @db.Decimal(10, 2)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant            Tenant              @relation(fields: [tenantId], references: [id])
+  stockMovements    StockMovement[]
+  serviceOrderItems ServiceOrderItem[]
+}
+
+model StockMovement {
+  id             String            @id @default(cuid())
+  tenantId       String
+  productId      String
+  userId         String
+  serviceOrderId String?
+  type           StockMovementType
+  quantity       Decimal           @db.Decimal(10, 3)
+  unitCost       Decimal?          @db.Decimal(10, 2)
+  reason         String?
+  createdAt      DateTime          @default(now())
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  product      Product       @relation(fields: [productId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id])
+}
+
+model Quote {
+  id               String      @id @default(cuid())
+  tenantId         String
+  customerId       String
+  vehicleId        String?
+  number           String
+  status           QuoteStatus @default(RASCUNHO)
+  validUntil       DateTime
+  sentAt           DateTime?
+  approvedAt       DateTime?
+  rejectedAt       DateTime?
+  expiredAt        DateTime?
+  totalAmount      Decimal     @default(0) @db.Decimal(10, 2)
+  convertedOrderId String?     @unique
+  pdfFileId        String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  tenant         Tenant       @relation(fields: [tenantId], references: [id])
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  items          QuoteItem[]
+  convertedOrder ServiceOrder? @relation("QuoteConvertedOrder", fields: [convertedOrderId], references: [id])
+  pdfFile        FileUpload?  @relation("QuotePdf", fields: [pdfFileId], references: [id])
+
+  @@unique([tenantId, number])
+}
+
+model QuoteItem {
+  id             String   @id @default(cuid())
+  quoteId        String
+  serviceTypeId  String?
+  description    String
+  quantity       Decimal  @db.Decimal(10, 3)
+  unitPrice      Decimal  @db.Decimal(10, 2)
+  discountAmount Decimal  @default(0) @db.Decimal(10, 2)
+  subtotal       Decimal  @db.Decimal(10, 2)
+  createdAt      DateTime @default(now())
+
+  quote       Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  serviceType ServiceType? @relation(fields: [serviceTypeId], references: [id])
+}
+
+model Contract {
+  id                  String         @id @default(cuid())
+  tenantId            String
+  customerId          String
+  number              String
+  title               String
+  contentHtml         String
+  status              ContractStatus @default(RASCUNHO)
+  publicTokenHash     String?
+  publicLinkExpiresAt DateTime?
+  signedAt            DateTime?
+  pdfFileId           String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  tenant    Tenant             @relation(fields: [tenantId], references: [id])
+  customer  Customer           @relation(fields: [customerId], references: [id])
+  signature ContractSignature?
+  pdfFile   FileUpload?        @relation("ContractPdf", fields: [pdfFileId], references: [id])
+
+  @@unique([tenantId, number])
+}
+
+model ContractSignature {
+  id              String   @id @default(cuid())
+  contractId      String   @unique
+  signatureFileId String
+  signedIp        String
+  signedUserAgent String?
+  signedAt        DateTime
+  createdAt       DateTime @default(now())
+
+  contract      Contract   @relation(fields: [contractId], references: [id])
+  signatureFile FileUpload @relation("ContractSignatureFile", fields: [signatureFileId], references: [id])
+}
+
+model ServiceOrder {
+  id                String             @id @default(cuid())
+  tenantId          String
+  customerId        String
+  vehicleId         String
+  responsibleUserId String?
+  number            String
+  status            ServiceOrderStatus @default(AGUARDANDO)
+  subtotalAmount    Decimal            @default(0) @db.Decimal(10, 2)
+  discountAmount    Decimal            @default(0) @db.Decimal(10, 2)
+  totalAmount       Decimal            @default(0) @db.Decimal(10, 2)
+  startedAt         DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  sourceQuoteId     String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  tenant          Tenant             @relation(fields: [tenantId], references: [id])
+  customer        Customer           @relation(fields: [customerId], references: [id])
+  vehicle         Vehicle            @relation(fields: [vehicleId], references: [id])
+  responsibleUser User?              @relation(fields: [responsibleUserId], references: [id])
+  items           ServiceOrderItem[]
+  queueEntry      QueueEntry?
+  stockMovements  StockMovement[]
+  fileUploads     FileUpload[]       @relation("ServiceOrderFiles")
+  sourceQuote     Quote?             @relation("QuoteConvertedOrder")
+  whatsappNotifications WhatsAppNotification[]
+
+  @@unique([tenantId, number])
+}
+
+model ServiceOrderItem {
+  id             String               @id @default(cuid())
+  serviceOrderId String
+  serviceTypeId  String?
+  productId      String?
+  kind           ServiceOrderItemKind
+  description    String
+  quantity       Decimal              @db.Decimal(10, 3)
+  unitPrice      Decimal              @db.Decimal(10, 2)
+  discountAmount Decimal              @default(0) @db.Decimal(10, 2)
+  subtotal       Decimal              @db.Decimal(10, 2)
+  createdAt      DateTime             @default(now())
+
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  serviceType  ServiceType? @relation(fields: [serviceTypeId], references: [id])
+  product      Product?     @relation(fields: [productId], references: [id])
+}
+
+model QueueEntry {
+  id               String      @id @default(cuid())
+  tenantId         String
+  serviceOrderId   String      @unique
+  status           QueueStatus @default(AGUARDANDO)
+  position         Int?
+  estimatedMinutes Int?
+  enteredAt        DateTime    @default(now())
+  startedAt        DateTime?
+  updatedAt        DateTime    @updatedAt
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+}
+
+model FileUpload {
+  id               String       @id @default(cuid())
+  tenantId         String
+  category         FileCategory
+  bucket           String
+  objectKey        String
+  mimeType         String
+  sizeBytes        Int
+  checksum         String?
+  uploadedByUserId String?
+  createdAt        DateTime     @default(now())
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  uploadedBy   User?        @relation(fields: [uploadedByUserId], references: [id])
+  carWashLogo  CarWashConfig[] @relation("CarWashConfigLogo")
+  quotePdfs    Quote[]         @relation("QuotePdf")
+  contractPdfs Contract[]      @relation("ContractPdf")
+  contractSignatures ContractSignature[] @relation("ContractSignatureFile")
+  serviceOrderFiles  ServiceOrder[]      @relation("ServiceOrderFiles")
+}
+
+model WhatsAppNotification {
+  id                String             @id @default(cuid())
+  tenantId          String
+  customerId        String
+  serviceOrderId    String?
+  event             NotificationEvent
+  targetPhone       String
+  payloadJson       Json
+  status            NotificationStatus @default(PENDENTE)
+  providerMessageId String?
+  attempts          Int                @default(0)
+  lastError         String?
+  sentAt            DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id])
+}
