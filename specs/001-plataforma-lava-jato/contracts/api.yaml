@@ -1,0 +1,900 @@
+openapi: 3.1.0
+info:
+  title: FlowCar API
+  version: 0.1.0
+  description: >-
+    Contrato HTTP dos fluxos críticos da plataforma multi-tenant. Os demais CRUDs
+    seguem o mesmo envelope `{ success, data/error }`, autenticação bearer e
+    escopo obrigatório por tenant.
+servers:
+  - url: http://localhost:3000
+tags:
+  - name: Health
+  - name: Tenants
+  - name: Auth
+  - name: PublicQueue
+  - name: ServiceOrders
+  - name: Quotes
+  - name: Contracts
+  - name: Uploads
+  - name: Reports
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Verifica saúde da aplicação e dependências críticas.
+      security: []
+      responses:
+        '200':
+          description: Aplicação saudável.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthOkEnvelope'
+        '503':
+          description: Alguma dependência está degradada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthDegradedEnvelope'
+
+  /api/tenants/register:
+    post:
+      tags: [Tenants]
+      summary: Cadastra um novo lava-jato e o usuário gerente proprietário.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterTenantRequest'
+      responses:
+        '201':
+          description: Tenant criado com sessão autenticada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionEnvelope'
+        '409':
+          description: Slug já utilizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '422':
+          description: Dados inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Autentica usuário por e-mail e senha.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login bem-sucedido. Define cookie HttpOnly de refresh token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionEnvelope'
+        '401':
+          description: Credenciais inválidas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '429':
+          description: Limite de tentativas por IP excedido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotaciona o refresh token e emite novo access token.
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          description: Sessão renovada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionEnvelope'
+        '401':
+          description: Refresh token ausente, expirado ou revogado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoga a sessão atual.
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          description: Sessão encerrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageEnvelope'
+        '401':
+          description: Cookie de refresh inválido ou ausente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/fila-publica/{slug}:
+    get:
+      tags: [PublicQueue]
+      summary: Retorna o estado público da fila de um tenant.
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-z0-9-]+$'
+      responses:
+        '200':
+          description: Fila pública encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicQueueEnvelope'
+        '404':
+          description: Tenant não encontrado para o slug informado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/ordens-servico:
+    post:
+      tags: [ServiceOrders]
+      summary: Cria uma nova ordem de serviço.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceOrderRequest'
+      responses:
+        '201':
+          description: Ordem criada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOrderEnvelope'
+        '409':
+          description: Veículo já possui OS ativa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '422':
+          description: Dados inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/ordens-servico/{orderId}/status:
+    patch:
+      tags: [ServiceOrders]
+      summary: Atualiza o status da ordem de serviço.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateServiceOrderStatusRequest'
+      responses:
+        '200':
+          description: Status atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOrderEnvelope'
+        '409':
+          description: Transição inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/ordens-servico/lote/status:
+    post:
+      tags: [ServiceOrders]
+      summary: Executa alteração de status em lote para múltiplas ordens.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchOrderStatusRequest'
+      responses:
+        '200':
+          description: Ação em lote concluída.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchOrderStatusEnvelope'
+        '422':
+          description: Algum item não pôde ser processado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/orcamentos:
+    post:
+      tags: [Quotes]
+      summary: Cria um novo orçamento.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuoteRequest'
+      responses:
+        '201':
+          description: Orçamento criado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteEnvelope'
+        '422':
+          description: Dados inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/orcamentos/{quoteId}/converter-em-os:
+    post:
+      tags: [Quotes]
+      summary: Converte um orçamento aprovado em ordem de serviço.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: quoteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conversão efetuada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteConversionEnvelope'
+        '409':
+          description: Orçamento já convertido ou estado inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/contratos/{contractId}/gerar-link:
+    post:
+      tags: [Contracts]
+      summary: Gera ou regenera link público de assinatura.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Link disponível.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractLinkEnvelope'
+        '409':
+          description: Contrato já assinado ou cancelado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/contratos/assinatura/{token}:
+    post:
+      tags: [Contracts]
+      summary: Assina publicamente um contrato pelo token de assinatura.
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractSignatureRequest'
+      responses:
+        '200':
+          description: Contrato assinado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractSignatureEnvelope'
+        '410':
+          description: Link expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: Contrato já assinado ou token inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/uploads:
+    post:
+      tags: [Uploads]
+      summary: Faz upload autenticado de arquivo para o MinIO privado.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [category, file]
+              properties:
+                category:
+                  type: string
+                  enum: [FOTO_VEICULO, FOTO_SERVICO, PDF_ORCAMENTO, PDF_CONTRATO, LOGOTIPO, ASSINATURA_CONTRATO]
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Upload concluído.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadEnvelope'
+        '422':
+          description: Tipo ou tamanho inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /api/relatorios/faturamento/exportar:
+    get:
+      tags: [Reports]
+      summary: Exporta o relatório filtrado de faturamento em CSV.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Arquivo CSV gerado com sucesso.
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '422':
+          description: Período inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: flowcar_refresh_token
+  schemas:
+    HealthOkEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [status, db, storage]
+          properties:
+            status:
+              type: string
+              const: ok
+            db:
+              type: string
+              const: ok
+            storage:
+              type: string
+              const: ok
+
+    HealthDegradedEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          $ref: '#/components/schemas/ApiError'
+
+    MessageEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          $ref: '#/components/schemas/ApiError'
+
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    RegisterTenantRequest:
+      type: object
+      required: [businessName, slug, ownerName, email, password]
+      properties:
+        businessName:
+          type: string
+          minLength: 3
+          maxLength: 120
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        ownerName:
+          type: string
+          minLength: 3
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthSessionEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [accessToken, expiresIn, user, tenant]
+          properties:
+            accessToken:
+              type: string
+            expiresIn:
+              type: integer
+              description: Tempo de vida do access token em segundos.
+            user:
+              $ref: '#/components/schemas/UserSummary'
+            tenant:
+              $ref: '#/components/schemas/TenantSummary'
+
+    UserSummary:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [GERENTE, FUNCIONARIO]
+
+    TenantSummary:
+      type: object
+      required: [id, businessName, slug]
+      properties:
+        id:
+          type: string
+        businessName:
+          type: string
+        slug:
+          type: string
+
+    PublicQueueEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [tenantName, slug, simultaneousSlots, inService, waiting, updatedAt]
+          properties:
+            tenantName:
+              type: string
+            slug:
+              type: string
+            simultaneousSlots:
+              type: integer
+            inService:
+              type: array
+              items:
+                $ref: '#/components/schemas/PublicQueueItem'
+            waiting:
+              type: array
+              items:
+                $ref: '#/components/schemas/PublicQueueItem'
+            updatedAt:
+              type: string
+              format: date-time
+
+    PublicQueueItem:
+      type: object
+      required: [orderNumber, maskedPlate, status]
+      properties:
+        orderNumber:
+          type: string
+        maskedPlate:
+          type: string
+        status:
+          type: string
+          enum: [AGUARDANDO, EM_ANDAMENTO]
+        position:
+          type: integer
+          nullable: true
+        estimatedMinutes:
+          type: integer
+          nullable: true
+
+    CreateServiceOrderRequest:
+      type: object
+      required: [customerId, vehicleId, responsibleUserId, items]
+      properties:
+        customerId:
+          type: string
+        vehicleId:
+          type: string
+        responsibleUserId:
+          type: string
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ServiceOrderItemInput'
+
+    ServiceOrderItemInput:
+      type: object
+      required: [kind, description, quantity, unitPrice]
+      properties:
+        kind:
+          type: string
+          enum: [SERVICO, PRODUTO]
+        serviceTypeId:
+          type: string
+          nullable: true
+        productId:
+          type: string
+          nullable: true
+        description:
+          type: string
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+        unitPrice:
+          type: number
+          minimum: 0
+        discountAmount:
+          type: number
+          minimum: 0
+          default: 0
+
+    UpdateServiceOrderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [AGUARDANDO, EM_ANDAMENTO, CONCLUIDO, CANCELADO]
+
+    BatchOrderStatusRequest:
+      type: object
+      required: [orderIds, status]
+      properties:
+        orderIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        status:
+          type: string
+          enum: [AGUARDANDO, EM_ANDAMENTO, CONCLUIDO, CANCELADO]
+
+    ServiceOrderEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/ServiceOrderSummary'
+
+    ServiceOrderSummary:
+      type: object
+      required: [id, number, status, customerName, vehiclePlate]
+      properties:
+        id:
+          type: string
+        number:
+          type: string
+        status:
+          type: string
+          enum: [AGUARDANDO, EM_ANDAMENTO, CONCLUIDO, CANCELADO]
+        customerName:
+          type: string
+        vehiclePlate:
+          type: string
+        queuePosition:
+          type: integer
+          nullable: true
+
+    BatchOrderStatusEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [affectedCount, status]
+          properties:
+            affectedCount:
+              type: integer
+            status:
+              type: string
+              enum: [AGUARDANDO, EM_ANDAMENTO, CONCLUIDO, CANCELADO]
+
+    CreateQuoteRequest:
+      type: object
+      required: [customerId, vehicleId, validUntil, items]
+      properties:
+        customerId:
+          type: string
+        vehicleId:
+          type: string
+        validUntil:
+          type: string
+          format: date
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/QuoteItemInput'
+
+    QuoteItemInput:
+      type: object
+      required: [description, quantity, unitPrice]
+      properties:
+        serviceTypeId:
+          type: string
+          nullable: true
+        description:
+          type: string
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+        unitPrice:
+          type: number
+          minimum: 0
+        discountAmount:
+          type: number
+          minimum: 0
+          default: 0
+
+    QuoteEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [id, number, status, totalAmount, validUntil]
+          properties:
+            id:
+              type: string
+            number:
+              type: string
+            status:
+              type: string
+              enum: [RASCUNHO, ENVIADO, APROVADO, REJEITADO, EXPIRADO]
+            totalAmount:
+              type: number
+            validUntil:
+              type: string
+              format: date
+
+    QuoteConversionEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [quoteId, orderId, orderNumber]
+          properties:
+            quoteId:
+              type: string
+            orderId:
+              type: string
+            orderNumber:
+              type: string
+
+    ContractLinkEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [contractId, publicUrl, expiresAt]
+          properties:
+            contractId:
+              type: string
+            publicUrl:
+              type: string
+              format: uri
+            expiresAt:
+              type: string
+              format: date-time
+
+    ContractSignatureRequest:
+      type: object
+      required: [signatureDataUrl]
+      properties:
+        signatureDataUrl:
+          type: string
+          description: Imagem da assinatura em data URL PNG.
+
+    ContractSignatureEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [contractId, status, signedAt]
+          properties:
+            contractId:
+              type: string
+            status:
+              type: string
+              const: ASSINADO
+            signedAt:
+              type: string
+              format: date-time
+
+    UploadEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required: [fileId, category, objectKey, downloadUrl]
+          properties:
+            fileId:
+              type: string
+            category:
+              type: string
+            objectKey:
+              type: string
+            downloadUrl:
+              type: string
+              format: uri
