@@ -65,16 +65,16 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Independent Test**: Register two separate lava-jatos, create data in each, and verify that API list endpoints for one tenant return zero records from the other.
 
-- [ ] T022 [P] [US11] Create `src/lib/validations/tenant.ts` with tenant registration Zod schema (businessName, slug, ownerName, email, password)
-- [ ] T023 [P] [US11] Create `src/server/services/tenant.service.ts` with `createTenant` — atomic transaction: insert Tenant + GERENTE User (bcrypt 12 rounds); slug uniqueness conflict returns "slug já está em uso" without exposing DB error — **[SEC-010]** calls `logTenantCreated(tenantId, slug)` after successful commit
-- [ ] T024 [US11] Create `src/app/api/tenants/route.ts` POST `/api/tenants` — public endpoint calling `createTenant`; slug validation with `[a-z0-9-]` regex; returns created tenant and user — **[SEC-004]** apply Redis sliding-window rate limiting (same mechanism as T015) before processing: max 10 registrations per IP per hour to prevent automated bulk tenant creation
-- [ ] T025 [US11] Create `src/app/(auth)/cadastro/page.tsx` tenant registration page (SSR, redirect to dashboard if already authenticated)
-- [ ] T026 [US11] Create `src/components/forms/RegisterForm.tsx` registration form with React Hook Form + Zod: businessName, slug, ownerName, email, password, confirmPassword — inline slug validation feedback
-- [ ] T027 [P] [US11] Create `src/lib/validations/user.ts` with employee create/update Zod schemas (name, email, password, role, phone)
-- [ ] T028 [P] [US11] Create `src/server/services/user.service.ts` with employee CRUD: list (filtered by tenantId), create (bcrypt 12 rounds), update, deactivate (revokes all Redis refresh tokens immediately)
-- [ ] T029 [US11] Create `src/app/api/funcionarios/route.ts` GET + POST employee endpoints (GERENTE only, scoped to session tenantId)
-- [ ] T030 [US11] Create `src/app/api/funcionarios/[id]/route.ts` GET + PATCH + DELETE employee endpoints (GERENTE only, assert tenantId ownership)
-- [ ] T031 [US11] Create `src/server/queries/onboarding.ts` — `getOnboardingState(tenantId)` returning `{ slugConfigured, hasServiceType, hasEmployee }` derived from DB facts (no dedicated table)
+- [x] T022 [P] [US11] Create `src/lib/validations/tenant.ts` with tenant registration Zod schema (businessName, slug, ownerName, email, password)
+- [x] T023 [P] [US11] Create `src/server/services/tenant.service.ts` with `createTenant` — atomic transaction: insert Tenant + GERENTE User (bcrypt 12 rounds); slug uniqueness conflict returns "slug já está em uso" without exposing DB error — **[SEC-010]** calls `logTenantCreated(tenantId, slug)` after successful commit
+- [x] T024 [US11] Create `src/app/api/tenants/route.ts` POST `/api/tenants` — public endpoint calling `createTenant`; slug validation with `[a-z0-9-]` regex; returns created tenant and user — **[SEC-004]** apply Redis sliding-window rate limiting (same mechanism as T015) before processing: max 10 registrations per IP per hour to prevent automated bulk tenant creation
+- [x] T025 [US11] Create `src/app/(auth)/cadastro/page.tsx` tenant registration page (SSR, redirect to dashboard if already authenticated)
+- [x] T026 [US11] Create `src/components/forms/RegisterForm.tsx` registration form with React Hook Form + Zod: businessName, slug, ownerName, email, password, confirmPassword — inline slug validation feedback
+- [x] T027 [P] [US11] Create `src/lib/validations/user.ts` with employee create/update Zod schemas (name, email, password, role, phone)
+- [x] T028 [P] [US11] Create `src/server/services/user.service.ts` with employee CRUD: list (filtered by tenantId), create (bcrypt 12 rounds), update, deactivate (revokes all Redis refresh tokens immediately)
+- [x] T029 [US11] Create `src/app/api/funcionarios/route.ts` GET + POST employee endpoints (GERENTE only, scoped to session tenantId)
+- [x] T030 [US11] Create `src/app/api/funcionarios/[id]/route.ts` GET + PATCH + DELETE employee endpoints (GERENTE only, assert tenantId ownership)
+- [x] T031 [US11] Create `src/server/queries/onboarding.ts` — `getOnboardingState(tenantId)` returning `{ slugConfigured, hasServiceType, hasEmployee }` derived from DB facts (no dedicated table)
 
 **Checkpoint**: POST `/api/tenants` creates isolated tenant; two tenants' data does not cross-contaminate in any list endpoint.
 

@@ -51,3 +51,49 @@ Started: 2026-05-08 16:18:14
 - `next lint` is deprecated in Next.js 15 (use eslint CLI) but still works
 ---
 
+
+---
+## Iteration 2 - 2026-05-08
+**User Story**: Phase 2 — Foundational Infrastructure
+**Tasks Completed**: 
+- [x] T008: prisma/schema.prisma with all 17 entities, 9 enums, composite unique constraints
+- [x] T009: Initial Prisma migration + Prisma client generated
+- [x] T010: src/lib/prisma.ts — PrismaClient singleton with @prisma/adapter-pg
+- [x] T011: src/lib/logging/logger.ts — pino structured logger + 6 SEC-010 typed helpers
+- [x] T012: src/lib/utils.ts — generateSequentialNumber (atomic FOR UPDATE), generateUUID, maskPlate, slugify, ok()/fail()
+- [x] T013: src/lib/validations/common.ts — slug, brazilianPhone, cpfCnpj, pagination, fileUpload Zod schemas
+- [x] T014: src/lib/auth/jwt.ts — jose JWT sign/verify (15 min access token)
+- [x] T015: src/lib/auth/redis.ts — refresh token CRUD, user revocation, sliding-window rate limiting
+- [x] T016: src/lib/storage/s3.ts — S3Client for MinIO
+- [x] T017: src/lib/storage/upload.ts — magic bytes validation (SEC-001), PutObject, pre-signed URL
+- [x] T018: src/middleware.ts — JWT auth, tenant header forwarding, RBAC for FUNCIONARIO
+- [x] T019: src/server/policies/rbac.ts — requireRole, assertTenantOwnership (404 not 403 per SEC-007)
+- [x] T020: src/app/api/health/route.ts — /api/health checking PostgreSQL + MinIO
+- [x] T020a: next.config.ts — HTTP security headers (SEC-003)
+- [x] T021: src/app/error.tsx + src/lib/api-error.ts — error boundary + typed errors + withErrorHandler
+**Tasks Remaining in Story**: None - story complete
+**Commit**: f9fe93d
+**Files Changed**: 
+- prisma/schema.prisma
+- prisma.config.ts
+- prisma/migrations/20260508193202_init/migration.sql
+- src/lib/prisma.ts
+- src/lib/logging/logger.ts
+- src/lib/utils.ts
+- src/lib/validations/common.ts
+- src/lib/auth/jwt.ts
+- src/lib/auth/redis.ts
+- src/lib/storage/s3.ts
+- src/lib/storage/upload.ts
+- src/middleware.ts
+- src/server/policies/rbac.ts
+- src/app/api/health/route.ts
+- next.config.ts
+- src/app/error.tsx
+- src/lib/api-error.ts
+**Learnings**:
+- Prisma 7 breaking change: `url` in datasource block of schema.prisma is no longer supported; use `prisma.config.ts` with `defineConfig` for CLI; PrismaClient runtime requires `@prisma/adapter-pg` adapter
+- Install `@prisma/adapter-pg` and `pg` and `@types/pg` for PostgreSQL driver adapter in Prisma 7
+- NextRequest no longer has `.ip` property in Next.js 15; use `req.headers.get('x-forwarded-for')` instead
+- `dotenv` is available as transitive dependency (via other packages) so `import 'dotenv/config'` works in prisma.config.ts
+---
