@@ -27,6 +27,7 @@ type FormValues = z.infer<typeof formSchema>
 interface Customer { id: string; name: string }
 interface Vehicle { id: string; plate: string; brand: string | null; model: string | null }
 interface ServiceType { id: string; name: string; basePrice: string; estimatedMinutes: number }
+interface Product { id: string; name: string; costPrice: string; currentStock: string }
 
 interface ServiceOrder {
   id: string
@@ -44,6 +45,7 @@ export default function ServiceOrderForm({ authFetch, onSuccess, onCancel }: Pro
   const [customers, setCustomers] = useState<Customer[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [customerSearch, setCustomerSearch] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -88,6 +90,16 @@ export default function ServiceOrderForm({ authFetch, onSuccess, onCancel }: Pro
         const res = await authFetch('/api/tipos-servico')
         const json = await res.json()
         if (json.success) setServiceTypes(json.data.filter((s: ServiceType & { isActive: boolean }) => s.isActive))
+      } catch { /* ignore */ }
+    })()
+  }, [authFetch])
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await authFetch('/api/inventario')
+        const json = await res.json()
+        if (json.success) setProducts(json.data.filter((p: Product & { isActive: boolean }) => p.isActive))
       } catch { /* ignore */ }
     })()
   }, [authFetch])
@@ -274,6 +286,36 @@ export default function ServiceOrderForm({ authFetch, onSuccess, onCancel }: Pro
                     ))}
                   </select>
                 )}
+
+                {field.kind === 'PRODUTO' && products.length > 0 && (
+                  <select
+                    {...register(`items.${index}.productId`)}
+                    onChange={(e) => {
+                      const p = products.find((pr) => pr.id === e.target.value)
+                      if (p) {
+                        setValue(`items.${index}.productId`, p.id)
+                        setValue(`items.${index}.description`, p.name)
+                        setValue(`items.${index}.unitPrice`, Number(p.costPrice))
+                      }
+                    }}
+                    className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:outline-none"
+                  >
+                    <option value="">Selecionar produto…</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                )}
+
+                {field.kind === 'PRODUTO' && (() => {
+                  const selectedProductId = watchedItems[index]?.productId
+                  const selectedProduct = products.find((p) => p.id === selectedProductId)
+                  return selectedProduct && Number(selectedProduct.currentStock) <= 0 ? (
+                    <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+                      ⚠️ Estoque zerado
+                    </div>
+                  ) : null
+                })()}
 
                 <input
                   {...register(`items.${index}.description`)}

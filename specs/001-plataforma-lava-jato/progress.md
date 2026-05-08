@@ -255,3 +255,32 @@ Started: 2026-05-08 16:18:14
 - DashboardAuthGuard client component handles the actual token presence check and redirects to /login if no access token in sessionStorage
 - constant-time bcrypt comparison: always run `bcrypt.compare` even when user not found (use dummy hash) to prevent timing attacks that reveal email existence
 ---
+
+---
+## Iteration 7 - 2026-05-08T16:59:36-03:00
+**User Story**: US4 — Fila Pública de Atendimento
+**Tasks Completed**: 
+- [x] T071: src/server/queries/queue-public.ts — getPublicQueue(slug) with plate masking and estimated wait times
+- [x] T072: src/app/api/fila-publica/[slug]/route.ts — public GET, 404 for unknown slug, rate limit 60 req/min/IP
+- [x] T073: src/app/fila/[slug]/page.tsx — SSR initial fetch + PublicQueuePage client component for 30s polling
+- [x] T074: src/components/queue/PublicQueueDisplay.tsx — two sections (Em Atendimento / Aguardando na Fila) + empty state
+- [x] T075: src/components/queue/QueueCard.tsx — vehicle card with masked plate, status badge, estimated wait time
+- [x] T076: src/components/queue/QueueRefreshTimer.tsx — 30s countdown, triggers refetch, shows last-updated timestamp
+- [x] T077: src/app/fila/[slug]/not-found.tsx — "Lava-jato não encontrado" page for invalid slugs
+**Tasks Remaining in Story**: None - story complete
+**Commit**: c8c2f09
+**Files Changed**: 
+- src/server/queries/queue-public.ts
+- src/app/api/fila-publica/[slug]/route.ts
+- src/app/fila/[slug]/page.tsx
+- src/app/fila/[slug]/PublicQueuePage.tsx
+- src/app/fila/[slug]/not-found.tsx
+- src/components/queue/PublicQueueDisplay.tsx
+- src/components/queue/QueueCard.tsx
+- src/components/queue/QueueRefreshTimer.tsx
+**Learnings**:
+- Tenant model uses `businessName` (not `name`) and has no `isActive` field
+- QueueEntry.estimatedMinutes is optional; fall back to SUM(serviceType.estimatedMinutes * quantity) from OS items
+- Public queue page splits into SSR page.tsx (initial fetch) + client PublicQueuePage.tsx (polling) pattern
+- Rate limiting reuses the same sliding-window Redis pattern from auth endpoints (zrangebyscore + zadd + zcard)
+---

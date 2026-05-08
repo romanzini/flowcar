@@ -176,17 +176,17 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Independent Test**: Create product with minimumStock=5; register exit movements until currentStock≤5; verify low-stock highlight without page reload.
 
-- [ ] T078 [P] [US5] Create `src/lib/validations/product.ts` with product create/update Zod schemas and `src/lib/validations/stock-movement.ts` with movement Zod schema (type, quantity, reason, serviceOrderId?)
-- [ ] T079 [P] [US5] Create `src/server/services/product.service.ts` with product CRUD; `isLowStock` derived field (`currentStock <= minimumStock`); deactivation guard (blocks if referenced in active OS items)
-- [ ] T080 [P] [US5] Create `src/server/services/stock.service.ts` with `recordMovement` (immutable StockMovement insert + updates `Product.currentStock`; ENTRADA recalculates `costPrice` weighted average), `listMovements` (filterable by product/period)
-- [ ] T081 [US5] Create `src/app/api/inventario/route.ts` GET (list with optional `lowStock=true` filter) + POST product endpoints
-- [ ] T082 [US5] Create `src/app/api/inventario/[id]/route.ts` GET + PATCH + DELETE product endpoints (assert tenantId ownership)
-- [ ] T083 [US5] Create `src/app/api/inventario/[id]/movimentacoes/route.ts` GET movement history (filterable by period) + POST new movement
-- [ ] T084 [P] [US5] Create `src/app/(dashboard)/inventario/page.tsx` inventory list page with low-stock highlight row styling, movement history expandable drawer, and create/edit product actions
-- [ ] T085 [US5] Create `src/components/forms/ProductForm.tsx` product create/edit form (name, unit, currentStock, minimumStock, costPrice)
-- [ ] T086 [US5] Create `src/components/forms/StockMovementForm.tsx` stock movement form with type selector (ENTRADA/SAÍDA/AJUSTE), quantity, reason
-- [ ] T087 [US5] Create `src/components/shared/LowStockBadge.tsx` visual low-stock badge component (shows "Estoque Crítico" when `currentStock <= minimumStock`)
-- [ ] T088 [US5] Integrate zero-stock warning into `src/components/forms/ServiceOrderForm.tsx` — when adding a product item with `currentStock <= 0`, display inline alert "Estoque zerado" (operation is not blocked)
+- [x] T078 [P] [US5] Create `src/lib/validations/product.ts` with product create/update Zod schemas and `src/lib/validations/stock-movement.ts` with movement Zod schema (type, quantity, reason, serviceOrderId?)
+- [x] T079 [P] [US5] Create `src/server/services/product.service.ts` with product CRUD; `isLowStock` derived field (`currentStock <= minimumStock`); deactivation guard (blocks if referenced in active OS items)
+- [x] T080 [P] [US5] Create `src/server/services/stock.service.ts` with `recordMovement` (immutable StockMovement insert + updates `Product.currentStock`; ENTRADA recalculates `costPrice` weighted average), `listMovements` (filterable by product/period)
+- [x] T081 [US5] Create `src/app/api/inventario/route.ts` GET (list with optional `lowStock=true` filter) + POST product endpoints
+- [x] T082 [US5] Create `src/app/api/inventario/[id]/route.ts` GET + PATCH + DELETE product endpoints (assert tenantId ownership)
+- [x] T083 [US5] Create `src/app/api/inventario/[id]/movimentacoes/route.ts` GET movement history (filterable by period) + POST new movement
+- [x] T084 [P] [US5] Create `src/app/(dashboard)/inventario/page.tsx` inventory list page with low-stock highlight row styling, movement history expandable drawer, and create/edit product actions
+- [x] T085 [US5] Create `src/components/forms/ProductForm.tsx` product create/edit form (name, unit, currentStock, minimumStock, costPrice)
+- [x] T086 [US5] Create `src/components/forms/StockMovementForm.tsx` stock movement form with type selector (ENTRADA/SAÍDA/AJUSTE), quantity, reason
+- [x] T087 [US5] Create `src/components/shared/LowStockBadge.tsx` visual low-stock badge component (shows "Estoque Crítico" when `currentStock <= minimumStock`)
+- [x] T088 [US5] Integrate zero-stock warning into `src/components/forms/ServiceOrderForm.tsx` — when adding a product item with `currentStock <= 0`, display inline alert "Estoque zerado" (operation is not blocked)
 
 **Checkpoint**: Product CRUD; movement history immutable; low-stock badge appears immediately on list page; zero-stock warning shown in OS form without blocking.
 
