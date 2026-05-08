@@ -86,18 +86,18 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Independent Test**: Create two tenants via seed; login with GERENTE → all menu items visible; login with FUNCIONARIO → Funcionários, Contratos, Relatórios, Configurações hidden and URL-direct access returns 403.
 
-- [ ] T032 [P] [US1] Create `src/lib/validations/auth.ts` with loginRequest, refreshRequest, and tokenResponse Zod schemas
-- [ ] T033 [P] [US1] Create `src/server/services/auth.service.ts` with `login` (rate limit check → email lookup → bcrypt verify → issue access + refresh tokens), `logout` (revoke refresh token from Redis), and `refreshToken` (validate stored token → rotate → issue new pair) — **[SEC-010]** `login` calls `logLoginSuccess` on success and `logLoginFailure` on invalid credentials (never log password or expose timing difference between "user not found" and "wrong password")
-- [ ] T034 [US1] Create `src/app/api/auth/login/route.ts` POST `/api/auth/login` — calls auth.service login; on success sets HttpOnly refresh token cookie and returns access token in body; on failure returns generic "Credenciais inválidas."; rate limit exceeded returns 429 — **[SEC-005]** cookie attributes MUST be: `HttpOnly; Secure; SameSite=Strict; Path=/api/auth; Max-Age=604800` — `Secure` ensures HTTPS-only transmission; `SameSite=Strict` prevents CSRF on the refresh endpoint
-- [ ] T035 [US1] Create `src/app/api/auth/logout/route.ts` POST `/api/auth/logout` — revokes refresh token from Redis; clears cookie
-- [ ] T036 [US1] Create `src/app/api/auth/refresh/route.ts` POST `/api/auth/refresh` — reads refresh token cookie; validates against Redis; returns new access token
-- [ ] T037 [US1] Create `src/app/(auth)/login/page.tsx` login page (SSR, redirect to dashboard if authenticated)
-- [ ] T038 [US1] Create `src/components/forms/LoginForm.tsx` login form with React Hook Form + Zod; displays error without revealing which field is wrong
-- [ ] T039 [P] [US1] Create `src/components/shared/Sidebar.tsx` dashboard sidebar with navigation items filtered by user role (FUNCIONARIO excludes Funcionários, Contratos, Relatórios, Configurações)
-- [ ] T040 [US1] Create `src/app/(dashboard)/layout.tsx` dashboard layout with server-side auth guard (redirect to `/login` if no valid session), session provider, and Sidebar
-- [ ] T041 [US1] Create `src/app/(dashboard)/funcionarios/page.tsx` employee management page (GERENTE only) — lists employees with create/edit/deactivate actions
-- [ ] T042 [P] [US1] Create `src/components/shared/RBACGuard.tsx` client-side component that renders children only when user role matches required role
-- [ ] T043 [US1] Create `src/components/forms/EmployeeForm.tsx` employee create/edit form (name, email, password, role, phone)
+- [x] T032 [P] [US1] Create `src/lib/validations/auth.ts` with loginRequest, refreshRequest, and tokenResponse Zod schemas
+- [x] T033 [P] [US1] Create `src/server/services/auth.service.ts` with `login` (rate limit check → email lookup → bcrypt verify → issue access + refresh tokens), `logout` (revoke refresh token from Redis), and `refreshToken` (validate stored token → rotate → issue new pair) — **[SEC-010]** `login` calls `logLoginSuccess` on success and `logLoginFailure` on invalid credentials (never log password or expose timing difference between "user not found" and "wrong password")
+- [x] T034 [US1] Create `src/app/api/auth/login/route.ts` POST `/api/auth/login` — calls auth.service login; on success sets HttpOnly refresh token cookie and returns access token in body; on failure returns generic "Credenciais inválidas."; rate limit exceeded returns 429 — **[SEC-005]** cookie attributes MUST be: `HttpOnly; Secure; SameSite=Strict; Path=/api/auth; Max-Age=604800` — `Secure` ensures HTTPS-only transmission; `SameSite=Strict` prevents CSRF on the refresh endpoint
+- [x] T035 [US1] Create `src/app/api/auth/logout/route.ts` POST `/api/auth/logout` — revokes refresh token from Redis; clears cookie
+- [x] T036 [US1] Create `src/app/api/auth/refresh/route.ts` POST `/api/auth/refresh` — reads refresh token cookie; validates against Redis; returns new access token
+- [x] T037 [US1] Create `src/app/(auth)/login/page.tsx` login page (SSR, redirect to dashboard if authenticated)
+- [x] T038 [US1] Create `src/components/forms/LoginForm.tsx` login form with React Hook Form + Zod; displays error without revealing which field is wrong
+- [x] T039 [P] [US1] Create `src/components/shared/Sidebar.tsx` dashboard sidebar with navigation items filtered by user role (FUNCIONARIO excludes Funcionários, Contratos, Relatórios, Configurações)
+- [x] T040 [US1] Create `src/app/(dashboard)/layout.tsx` dashboard layout with server-side auth guard (redirect to `/login` if no valid session), session provider, and Sidebar
+- [x] T041 [US1] Create `src/app/(dashboard)/funcionarios/page.tsx` employee management page (GERENTE only) — lists employees with create/edit/deactivate actions
+- [x] T042 [P] [US1] Create `src/components/shared/RBACGuard.tsx` client-side component that renders children only when user role matches required role
+- [x] T043 [US1] Create `src/components/forms/EmployeeForm.tsx` employee create/edit form (name, email, password, role, phone)
 
 **Checkpoint**: Login flow complete; RBAC enforced in middleware AND UI; cross-tenant session isolation verified.
 

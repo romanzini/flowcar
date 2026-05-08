@@ -97,3 +97,38 @@ Started: 2026-05-08 16:18:14
 - NextRequest no longer has `.ip` property in Next.js 15; use `req.headers.get('x-forwarded-for')` instead
 - `dotenv` is available as transitive dependency (via other packages) so `import 'dotenv/config'` works in prisma.config.ts
 ---
+
+---
+## Iteration 3 - 2026-05-08
+**User Story**: Phase 3 — US-011 Cadastro e Onboarding de Novo Lava-Jato (P0)
+**Tasks Completed**: 
+- [x] T022: src/lib/validations/tenant.ts — Zod schema (businessName, slug, ownerName, email, password)
+- [x] T023: src/server/services/tenant.service.ts — createTenant atomic transaction (Tenant + GERENTE User, bcrypt 12 rounds, SEC-010 logTenantCreated)
+- [x] T024: src/app/api/tenants/route.ts — POST /api/tenants with rate limiting (10/IP/hour, SEC-004)
+- [x] T025: src/app/(auth)/cadastro/page.tsx — SSR registration page with auth redirect
+- [x] T026: src/components/forms/RegisterForm.tsx — React Hook Form + Zod with slug preview feedback
+- [x] T027: src/lib/validations/user.ts — employee create/update Zod schemas
+- [x] T028: src/server/services/user.service.ts — employee CRUD with bcrypt + Redis token revocation on deactivate
+- [x] T029: src/app/api/funcionarios/route.ts — GET + POST (GERENTE only via middleware)
+- [x] T030: src/app/api/funcionarios/[id]/route.ts — GET + PATCH + DELETE with tenantId ownership assertion
+- [x] T031: src/server/queries/onboarding.ts — getOnboardingState(tenantId) derived from DB facts
+**Tasks Remaining in Story**: None - story complete
+**Commit**: 6a18c6b
+**Files Changed**: 
+- src/lib/validations/tenant.ts
+- src/lib/validations/user.ts
+- src/server/services/tenant.service.ts
+- src/server/services/user.service.ts
+- src/server/queries/onboarding.ts
+- src/app/api/tenants/route.ts
+- src/app/api/funcionarios/route.ts
+- src/app/api/funcionarios/[id]/route.ts
+- src/app/(auth)/cadastro/page.tsx
+- src/components/forms/RegisterForm.tsx
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- `ok()` helper in utils.ts already returns NextResponse; don't double-wrap with NextResponse.json(ok(...)) — just return ok(data) directly
+- Zod v4 uses `error.issues` (not `error.errors`) for accessing validation error details
+- withErrorHandler expects a thunk `() => Promise<...>`; route handlers must call `withErrorHandler(async () => { ... })()`
+- Prisma unique constraint violation code is 'P2002'; meta.target array contains the conflicting field names
+---
