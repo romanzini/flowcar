@@ -21,13 +21,13 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Purpose**: Project initialization, Docker Compose stack, Next.js bootstrap, TypeScript config, and base types.
 
-- [ ] T001 Create `.env.example` with all required vars: DATABASE_URL, REDIS_URL, MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM, NEXT_PUBLIC_APP_URL
-- [ ] T002 Create `docker-compose.yml` with services: PostgreSQL 17, Redis 7, MinIO, and app with healthcheck pointing to `/api/health`
-- [ ] T003 [P] Create `Dockerfile` for Next.js 15 production build (multi-stage, non-root user)
-- [ ] T004 Initialize Next.js 15 project with TypeScript 5 strict mode and all dependencies in `package.json` (React 19, Prisma 7, Zod 4, Tailwind CSS 4, shadcn/ui, React Hook Form, TanStack React Query 5, jose, bcryptjs, ioredis, bullmq, twilio, @aws-sdk/client-s3, playwright, isomorphic-dompurify, @types/dompurify, pino)
-- [ ] T005 [P] Configure Tailwind CSS 4 and shadcn/ui in `tailwind.config.ts` and `components.json`
-- [ ] T006 [P] Configure ESLint and TypeScript strict mode in `eslint.config.js` and `tsconfig.json`
-- [ ] T007 [P] Create `src/types/api.ts` with standard API envelope types `{ success: true, data: T }` / `{ success: false, error: string }`
+- [x] T001 Create `.env.example` with all required vars: DATABASE_URL, REDIS_URL, MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM, NEXT_PUBLIC_APP_URL
+- [x] T002 Create `docker-compose.yml` with services: PostgreSQL 17, Redis 7, MinIO, and app with healthcheck pointing to `/api/health`
+- [x] T003 [P] Create `Dockerfile` for Next.js 15 production build (multi-stage, non-root user)
+- [x] T004 Initialize Next.js 15 project with TypeScript 5 strict mode and all dependencies in `package.json` (React 19, Prisma 7, Zod 4, Tailwind CSS 4, shadcn/ui, React Hook Form, TanStack React Query 5, jose, bcryptjs, ioredis, bullmq, twilio, @aws-sdk/client-s3, playwright, isomorphic-dompurify, @types/dompurify, pino)
+- [x] T005 [P] Configure Tailwind CSS 4 and shadcn/ui in `tailwind.config.ts` and `components.json`
+- [x] T006 [P] Configure ESLint and TypeScript strict mode in `eslint.config.js` and `tsconfig.json`
+- [x] T007 [P] Create `src/types/api.ts` with standard API envelope types `{ success: true, data: T }` / `{ success: false, error: string }`
 
 **Checkpoint**: Docker Compose stack runs; Next.js dev server starts without errors.
 
