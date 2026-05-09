@@ -263,14 +263,14 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Independent Test**: Change slug and verify public queue URL responds at new slug. Add a ServiceType and verify it appears in OS/Quote form dropdowns immediately.
 
-- [ ] T121 [P] [US9] Create `src/lib/validations/settings.ts` with CarWashConfig update Zod schema (slug `[a-z0-9-]`, simultaneousSlots ≥ 1, phone, address, logoFileId) and ServiceType create/update schema (name, basePrice ≥ 0, estimatedMinutes > 0)
-- [ ] T122 [P] [US9] Create `src/server/services/settings.service.ts` with: `getConfig(tenantId)`, `upsertConfig` (updates Tenant.slug with uniqueness guard + updates CarWashConfig), `uploadLogo` (validates image, stores to MinIO as LOGOTIPO category, updates CarWashConfig.logoFileId), `listServiceTypes`, `createServiceType`, `updateServiceType`, `deactivateServiceType`
-- [ ] T123 [US9] Create `src/app/api/configuracoes/route.ts` GET + PATCH CarWashConfig endpoints (GERENTE only)
-- [ ] T124 [US9] Create `src/app/api/configuracoes/tipos-servico/route.ts` GET (all active, no auth restriction) + POST ServiceType endpoints (GERENTE only for POST)
-- [ ] T125 [US9] Create `src/app/api/configuracoes/tipos-servico/[id]/route.ts` PATCH + DELETE ServiceType endpoints (GERENTE only)
-- [ ] T126 [P] [US9] Create `src/app/(dashboard)/configuracoes/page.tsx` settings page (GERENTE only) with CarWashConfig form, logo uploader, and ServiceType management table
-- [ ] T127 [US9] Create `src/components/forms/CarWashConfigForm.tsx` carwash settings form with all fields and logo FileUpload component
-- [ ] T128 [US9] Create `src/components/forms/ServiceTypeForm.tsx` service type create/edit form (name, basePrice, estimatedMinutes)
+- [x] T121 [P] [US9] Create `src/lib/validations/settings.ts` with CarWashConfig update Zod schema (slug `[a-z0-9-]`, simultaneousSlots ≥ 1, phone, address, logoFileId) and ServiceType create/update schema (name, basePrice ≥ 0, estimatedMinutes > 0)
+- [x] T122 [P] [US9] Create `src/server/services/settings.service.ts` with: `getConfig(tenantId)`, `upsertConfig` (updates Tenant.slug with uniqueness guard + updates CarWashConfig), `uploadLogo` (validates image, stores to MinIO as LOGOTIPO category, updates CarWashConfig.logoFileId), `listServiceTypes`, `createServiceType`, `updateServiceType`, `deactivateServiceType`
+- [x] T123 [US9] Create `src/app/api/configuracoes/route.ts` GET + PATCH CarWashConfig endpoints (GERENTE only)
+- [x] T124 [US9] Create `src/app/api/configuracoes/tipos-servico/route.ts` GET (all active, no auth restriction) + POST ServiceType endpoints (GERENTE only for POST)
+- [x] T125 [US9] Create `src/app/api/configuracoes/tipos-servico/[id]/route.ts` PATCH + DELETE ServiceType endpoints (GERENTE only)
+- [x] T126 [P] [US9] Create `src/app/(dashboard)/configuracoes/page.tsx` settings page (GERENTE only) with CarWashConfig form, logo uploader, and ServiceType management table
+- [x] T127 [US9] Create `src/components/forms/CarWashConfigForm.tsx` carwash settings form with all fields and logo FileUpload component
+- [x] T128 [US9] Create `src/components/forms/ServiceTypeForm.tsx` service type create/edit form (name, basePrice, estimatedMinutes)
 
 **Checkpoint**: Slug change immediately reflected in public queue URL; ServiceType appears in OS/Quote selectors; simultaneousSlots change updates queue time estimates.
 

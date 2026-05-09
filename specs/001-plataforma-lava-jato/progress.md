@@ -399,3 +399,34 @@ Started: 2026-05-08 16:18:14
 - Public signing page split into Server Component (token validation, data fetching) + Client Component (canvas + submission)
 - IP masking: keep first and last octet, replace middle two with xxx.xxx
 ---
+
+---
+## Iteration 8 - 2026-05-09
+**User Story**: Phase 11 — US-008 Relatórios e Dashboard com KPIs
+**Tasks Completed**: 
+- [x] T114: src/server/queries/dashboard.ts — getDayRevenue, getOpenOrdersCount, getMonthCompletedCount, getCriticalStockCount, getDashboardKPIs
+- [x] T115: src/server/queries/reports.ts — getRevenueReport, getTopServices, getTopCustomers, getStockMovementsReport
+- [x] T116: src/app/api/relatorios/route.ts — GET with type/from/to params; GERENTE only
+- [x] T117: src/app/(dashboard)/dashboard/page.tsx — KPI cards, recent OS table, OnboardingChecklist (GERENTE only)
+- [x] T118: src/app/(dashboard)/relatorios/page.tsx — report type selector, date range picker, results DataTable
+- [x] T119: src/components/dashboard/KPICard.tsx — label, value, icon, optional trend display
+- [x] T120: src/components/dashboard/OnboardingChecklist.tsx — fetches /api/onboarding/state, auto-hides when all 3 complete
+**Tasks Remaining in Story**: None - story complete
+**Commit**: 302fc5d
+**Files Changed**: 
+- src/server/queries/dashboard.ts
+- src/server/queries/reports.ts
+- src/app/api/relatorios/route.ts
+- src/app/api/dashboard/kpis/route.ts
+- src/app/api/onboarding/state/route.ts
+- src/app/(dashboard)/dashboard/page.tsx
+- src/app/(dashboard)/relatorios/page.tsx
+- src/components/dashboard/KPICard.tsx
+- src/components/dashboard/OnboardingChecklist.tsx
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- withErrorHandler generic type is inferred from the first return; when switch returns different typed union results, define a single unified interface and cast to it to avoid TS mismatch
+- StockMovement.costAtTime does not exist; field is `unitCost` (nullable Decimal)
+- Low stock count must be computed in application layer (JS filter) as Prisma v7 doesn't support column-to-column comparisons
+- Dashboard KPI endpoint is at /api/dashboard/kpis; onboarding state at /api/onboarding/state (both created alongside US8)
+---
