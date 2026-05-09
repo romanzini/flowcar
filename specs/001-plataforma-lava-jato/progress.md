@@ -286,7 +286,44 @@ Started: 2026-05-08 16:18:14
 ---
 
 ---
-## Iteration 8 - 2026-05-08T17:04:51-03:00
+## Iteration 9 - 2026-05-09T08:49:25-03:00
+**User Story**: US6 — Orçamentos e Geração de PDF
+**Tasks Completed**: 
+- [x] T089: src/lib/validations/quote.ts — Zod schemas (create/update/item/statusTransition)
+- [x] T090: src/server/services/quote.service.ts — createQuote, updateQuote, transitionQuoteStatus, convertToOS, getQuoteById, listQuotes
+- [x] T091: src/lib/pdf/generator.ts — Playwright headless singleton, SEC-002 security (no file://, CSP, --disable-extensions)
+- [x] T092: src/lib/pdf/quote-template.ts — renderQuoteHTML with DOMPurify sanitization (SEC-002)
+- [x] T093: src/lib/jobs/quote-expiration.worker.ts — BullMQ daily cron worker
+- [x] T094: src/app/api/orcamentos/route.ts — GET (list + status filter) + POST
+- [x] T095: src/app/api/orcamentos/[id]/route.ts — GET + PATCH (update + status transition)
+- [x] T096: src/app/api/orcamentos/[id]/pdf/route.ts — POST PDF generation, MinIO upload, binary stream
+- [x] T097: src/app/api/orcamentos/[id]/converter/route.ts — POST convert-to-OS with idempotency guard
+- [x] T098: src/app/(dashboard)/orcamentos/page.tsx — list with status tabs and create button
+- [x] T099: src/app/(dashboard)/orcamentos/[id]/page.tsx — detail with status actions, PDF download, convert button
+- [x] T100: src/components/forms/QuoteForm.tsx — multi-item form with live total calculation
+**Tasks Remaining in Story**: None - story complete
+**Commit**: b1a7427
+**Files Changed**: 
+- src/lib/validations/quote.ts
+- src/server/services/quote.service.ts
+- src/lib/pdf/generator.ts
+- src/lib/pdf/quote-template.ts
+- src/lib/jobs/quote-expiration.worker.ts
+- src/app/api/orcamentos/route.ts
+- src/app/api/orcamentos/[id]/route.ts
+- src/app/api/orcamentos/[id]/pdf/route.ts
+- src/app/api/orcamentos/[id]/converter/route.ts
+- src/app/(dashboard)/orcamentos/page.tsx
+- src/app/(dashboard)/orcamentos/[id]/page.tsx
+- src/components/forms/QuoteForm.tsx
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- PDF streaming routes must NOT use `withErrorHandler` (returns binary not JSON ApiResponse); use try/catch with ApiError directly
+- Prisma `Decimal` fields must be converted to `String()` before passing to template functions that expect `string | number`
+- `new NextResponse(buffer, ...)` requires `new Uint8Array(buffer)` not raw `Buffer<ArrayBufferLike>` to satisfy BodyInit type
+- `gross` variable was computed but unused in quote-template; only `discount` and `item.subtotal` needed
+---
+
 **User Story**: US5 — Controle de Estoque (P5)
 **Tasks Completed**: 
 - [x] T078: src/lib/validations/product.ts + src/lib/validations/stock-movement.ts — Zod schemas
