@@ -245,13 +245,13 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Independent Test**: Using seed data (20 OS per tenant), verify dashboard KPIs match expected counts; apply a date range filter on the revenue report and verify results narrow correctly.
 
-- [ ] T114 [P] [US8] Create `src/server/queries/dashboard.ts` with KPI aggregation queries: `getDayRevenue(tenantId)`, `getOpenOrdersCount(tenantId)`, `getMonthCompletedCount(tenantId)`, `getCriticalStockCount(tenantId)`
-- [ ] T115 [P] [US8] Create `src/server/queries/reports.ts` with filterable report queries (all accept `{ tenantId, from, to }`): `getRevenueReport`, `getTopServices`, `getTopCustomers`, `getStockMovementsReport`
-- [ ] T116 [US8] Create `src/app/api/relatorios/route.ts` GET endpoint with `type` (revenue | services | customers | stock) and `from`/`to` date query params; GERENTE only
-- [ ] T117 [US8] Create `src/app/(dashboard)/page.tsx` main dashboard page (SSR) with KPI cards, recent OS summary table, and `OnboardingChecklist` widget (auto-hidden when all 3 tasks complete)
-- [ ] T118 [P] [US8] Create `src/app/(dashboard)/relatorios/page.tsx` reports page with period range picker (DateRangePicker), report type selector, and results rendered in DataTable
-- [ ] T119 [US8] Create `src/components/dashboard/KPICard.tsx` KPI display card (label, value, icon, trend)
-- [ ] T120 [US8] Create `src/components/dashboard/OnboardingChecklist.tsx` onboarding checklist widget — fetches `getOnboardingState`, renders 3 checkbox items; disappears when all 3 are true
+- [x] T114 [P] [US8] Create `src/server/queries/dashboard.ts` with KPI aggregation queries: `getDayRevenue(tenantId)`, `getOpenOrdersCount(tenantId)`, `getMonthCompletedCount(tenantId)`, `getCriticalStockCount(tenantId)`
+- [x] T115 [P] [US8] Create `src/server/queries/reports.ts` with filterable report queries (all accept `{ tenantId, from, to }`): `getRevenueReport`, `getTopServices`, `getTopCustomers`, `getStockMovementsReport`
+- [x] T116 [US8] Create `src/app/api/relatorios/route.ts` GET endpoint with `type` (revenue | services | customers | stock) and `from`/`to` date query params; GERENTE only
+- [x] T117 [US8] Create `src/app/(dashboard)/page.tsx` main dashboard page (SSR) with KPI cards, recent OS summary table, and `OnboardingChecklist` widget (auto-hidden when all 3 tasks complete)
+- [x] T118 [P] [US8] Create `src/app/(dashboard)/relatorios/page.tsx` reports page with period range picker (DateRangePicker), report type selector, and results rendered in DataTable
+- [x] T119 [US8] Create `src/components/dashboard/KPICard.tsx` KPI display card (label, value, icon, trend)
+- [x] T120 [US8] Create `src/components/dashboard/OnboardingChecklist.tsx` onboarding checklist widget — fetches `getOnboardingState`, renders 3 checkbox items; disappears when all 3 are true
 
 **Checkpoint**: Dashboard KPIs match seed data totals; reports filter correctly by period; onboarding checklist hides after all 3 tasks complete.
 

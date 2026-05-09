@@ -357,3 +357,45 @@ Started: 2026-05-08 16:18:14
 - lowStock column-to-column comparison (currentStock <= minimumStock) must be done in JS/application layer — Prisma v7 doesn't support raw column comparisons in findMany where clause
 - ServiceOrderForm loads products via /api/inventario endpoint; zero-stock alert is display-only (non-blocking per spec)
 ---
+
+---
+## Iteration 7 - 2026-05-09
+**User Story**: Phase 10 — US-007 Contratos e Assinatura Digital
+**Tasks Completed**: 
+- [x] T101: src/lib/validations/contract.ts — Zod schemas (create/update/sign/linkRegeneration)
+- [x] T102: src/server/services/contract.service.ts — createContract, generateSigningLink, regenerateLink, signContract (atomic SEC-008 transaction, SEC-010 audit), getContractByToken, updateContract, listContracts
+- [x] T103: src/lib/pdf/contract-template.ts — renderContractHTML with DOMPurify sanitization, base64 signature embed, masked IP
+- [x] T104: src/app/api/contratos/route.ts — GET list + POST create (GERENTE only)
+- [x] T105: src/app/api/contratos/[id]/route.ts — GET + PATCH (GERENTE, tenantId assertion)
+- [x] T106: src/app/api/contratos/[id]/link/route.ts — POST generate/regenerate signing link (SEC-015)
+- [x] T107: src/app/api/contratos/publico/[token]/route.ts — public GET+POST with CSRF (SEC-006), rate limiting (SEC-004), IP capture (SEC-012)
+- [x] T108: src/app/api/contratos/[id]/pdf/route.ts — Playwright PDF + embedded signature, upload to MinIO
+- [x] T109: src/app/(dashboard)/contratos/page.tsx — contracts list with status filter tabs + create modal
+- [x] T110: src/app/(dashboard)/contratos/[id]/page.tsx — detail page with link mgmt + PDF download
+- [x] T111: src/app/contratos/assinar/[token]/page.tsx — public SSR signing page + client signing component
+- [x] T112: src/components/forms/ContractForm.tsx — RHF+Zod form with debounced customer search
+- [x] T113: src/components/shared/SignaturePad.tsx — canvas signature pad (mouse+touch), PNG output
+**Tasks Remaining in Story**: None - story complete
+**Commit**: 343ebea
+**Files Changed**: 
+- src/lib/validations/contract.ts
+- src/server/services/contract.service.ts
+- src/lib/pdf/contract-template.ts
+- src/app/api/contratos/route.ts
+- src/app/api/contratos/[id]/route.ts
+- src/app/api/contratos/[id]/link/route.ts
+- src/app/api/contratos/publico/[token]/route.ts
+- src/app/api/contratos/[id]/pdf/route.ts
+- src/app/(dashboard)/contratos/page.tsx
+- src/app/(dashboard)/contratos/[id]/page.tsx
+- src/app/contratos/assinar/[token]/page.tsx
+- src/components/forms/ContractForm.tsx
+- src/components/shared/SignaturePad.tsx
+- src/components/contracts/PublicContractSigningClient.tsx
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- CSRF double-submit: GET sets HttpOnly cookie + returns token in body; POST validates X-CSRF-Token header matches cookie
+- signContract uses prisma.$transaction with re-read of status before write (SEC-008 atomic double-signing prevention)
+- Public signing page split into Server Component (token validation, data fetching) + Client Component (canvas + submission)
+- IP masking: keep first and last octet, replace middle two with xxx.xxx
+---
