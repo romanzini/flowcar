@@ -284,3 +284,39 @@ Started: 2026-05-08 16:18:14
 - Public queue page splits into SSR page.tsx (initial fetch) + client PublicQueuePage.tsx (polling) pattern
 - Rate limiting reuses the same sliding-window Redis pattern from auth endpoints (zrangebyscore + zadd + zcard)
 ---
+
+---
+## Iteration 8 - 2026-05-08T17:04:51-03:00
+**User Story**: US5 — Controle de Estoque (P5)
+**Tasks Completed**: 
+- [x] T078: src/lib/validations/product.ts + src/lib/validations/stock-movement.ts — Zod schemas
+- [x] T079: src/server/services/product.service.ts — CRUD, isLowStock derived field, deactivation guard
+- [x] T080: src/server/services/stock.service.ts — recordMovement (weighted avg cost), listMovements
+- [x] T081: src/app/api/inventario/route.ts — GET (lowStock filter) + POST
+- [x] T082: src/app/api/inventario/[id]/route.ts — GET + PATCH + DELETE
+- [x] T083: src/app/api/inventario/[id]/movimentacoes/route.ts — GET (period filter) + POST
+- [x] T084: src/app/(dashboard)/inventario/page.tsx — list with red-highlighted low-stock rows + slide-out movement drawer
+- [x] T085: src/components/forms/ProductForm.tsx — create/edit form
+- [x] T086: src/components/forms/StockMovementForm.tsx — movement form with ENTRADA/SAIDA/AJUSTE radio selector
+- [x] T087: src/components/shared/LowStockBadge.tsx — "Estoque Crítico" badge
+- [x] T088: Integrated zero-stock inline alert into ServiceOrderForm for PRODUTO items
+**Tasks Remaining in Story**: None - story complete
+**Commit**: 34b9257
+**Files Changed**: 
+- src/lib/validations/product.ts
+- src/lib/validations/stock-movement.ts
+- src/server/services/product.service.ts
+- src/server/services/stock.service.ts
+- src/app/api/inventario/route.ts
+- src/app/api/inventario/[id]/route.ts
+- src/app/api/inventario/[id]/movimentacoes/route.ts
+- src/app/(dashboard)/inventario/page.tsx
+- src/components/forms/ProductForm.tsx
+- src/components/forms/StockMovementForm.tsx
+- src/components/shared/LowStockBadge.tsx
+- src/components/forms/ServiceOrderForm.tsx
+**Learnings**:
+- Prisma Decimal fields are typed as `Decimal`, must explicitly type intermediate calculation variables as `number` when doing JS arithmetic
+- lowStock column-to-column comparison (currentStock <= minimumStock) must be done in JS/application layer — Prisma v7 doesn't support raw column comparisons in findMany where clause
+- ServiceOrderForm loads products via /api/inventario endpoint; zero-stock alert is display-only (non-blocking per spec)
+---
