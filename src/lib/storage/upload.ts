@@ -80,6 +80,17 @@ export async function uploadFile(options: UploadOptions): Promise<UploadResult> 
   return { objectKey, bucket: S3_BUCKET, checksum }
 }
 
+export async function getFileBuffer(objectKey: string): Promise<Buffer> {
+  const response = await s3.send(new GetObjectCommand({ Bucket: S3_BUCKET, Key: objectKey }))
+  const bytes = await response.Body?.transformToByteArray()
+
+  if (!bytes) {
+    throw new Error('Arquivo não encontrado no armazenamento')
+  }
+
+  return Buffer.from(bytes)
+}
+
 export async function getPresignedUrl(objectKey: string, expiresInSeconds = 3600): Promise<string> {
   return getSignedUrl(
     s3,
