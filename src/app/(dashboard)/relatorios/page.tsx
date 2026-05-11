@@ -140,6 +140,7 @@ export default function RelatoriosPage() {
   const [from, setFrom] = useState(defaults.from)
   const [to, setTo] = useState(defaults.to)
   const [loading, setLoading] = useState(false)
+  const [csvLoading, setCsvLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<ReportResult | null>(null)
 
@@ -159,6 +160,30 @@ export default function RelatoriosPage() {
       setError('Erro de conexão')
     } finally {
       setLoading(false)
+    }
+  }, [authFetch, reportType, from, to])
+
+  const exportCsv = useCallback(async () => {
+    setCsvLoading(true)
+    try {
+      const params = new URLSearchParams({ type: reportType, from, to })
+      const res = await authFetch(`/api/relatorios/export?${params.toString()}`)
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        setError((json as { error?: string }).error ?? 'Erro ao exportar CSV')
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'relatorio.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setError('Erro de conexão ao exportar')
+    } finally {
+      setCsvLoading(false)
     }
   }, [authFetch, reportType, from, to])
 
@@ -205,6 +230,13 @@ export default function RelatoriosPage() {
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? 'Carregando...' : 'Gerar relatório'}
+          </button>
+          <button
+            onClick={() => void exportCsv()}
+            disabled={csvLoading}
+            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {csvLoading ? 'Exportando…' : 'Exportar CSV'}
           </button>
         </div>
       </div>

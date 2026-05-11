@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from '@/components/shared/SessionProvider'
+import { BatchActionToolbar } from '@/components/shared/BatchActionToolbar'
 
 type OSStatus = 'AGUARDANDO' | 'EM_ANDAMENTO' | 'CONCLUIDO' | 'CANCELADO'
 
@@ -12,7 +13,7 @@ interface ServiceOrder {
   status: OSStatus
   totalAmount: string
   createdAt: string
-  customer: { name: string }
+  customer: { id: string; name: string }
   vehicle: { plate: string; brand: string | null; model: string | null }
   responsibleUser: { name: string } | null
 }
@@ -39,6 +40,12 @@ const TABS: { label: string; value: string }[] = [
   { label: 'Cancelados', value: 'CANCELADO' },
 ]
 
+const BATCH_ACTIONS = [
+  { label: 'Marcar como Concluído', value: 'CONCLUIDO' },
+  { label: 'Marcar como Cancelado', value: 'CANCELADO' },
+  { label: 'Marcar como Aguardando', value: 'AGUARDANDO' },
+]
+
 export default function OrdensServicoPage() {
   const { authFetch } = useSession()
   const router = useRouter()
@@ -46,16 +53,34 @@ export default function OrdensServicoPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [batchLoading, setBatchLoading] = useState(false)
+
+  // Advanced filter state
+  const [filterClient, setFilterClient] = useState('')
+  const [filterDateFrom, setFilterDateFrom] = useState('')
+  const [filterDateTo, setFilterDateTo] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setSelectedIds(new Set())
     try {
-      const params = activeTab ? `?status=${activeTab}` : ''
-      const res = await authFetch(`/api/ordens-servico${params}`)
+      const params = new URLSearchParams()
+      if (activeTab) params.set('status', activeTab)
+      if (filterDateFrom) params.set('dateFrom', filterDateFrom)
+      if (filterDateTo) params.set('dateTo', filterDateTo)
+      const query = params.toString()
+      const res = await authFetch(`/api/ordens-servico${query ? `?${query}` : ''}`)
       const json = await res.json()
       if (json.success) {
-        setOrders(json.data)
+        let data: ServiceOrder[] = json.data
+        if (filterClient.trim()) {
+          const q = filterClient.trim().toLowerCase()
+          data = data.filter((o) => o.customer.name.toLowerCase().includes(q))
+        }
+        setOrders(data)
       } else {
         setError(json.error ?? 'Erro ao carregar ordens de serviço')
       }
@@ -64,23 +89,119 @@ export default function OrdensServicoPage() {
     } finally {
       setLoading(false)
     }
-  }, [authFetch, activeTab])
+  }, [authFetch, activeTab, filterClient, filterDateFrom, filterDateTo])
 
   useEffect(() => {
     void fetchOrders()
   }, [fetchOrders])
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === orders.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(orders.map((o) => o.id)))
+    }
+  }
+
+  const handleBatchAction = async (action: string) => {
+    if (!action || selectedIds.size === 0) return
+    setBatchLoading(true)
+    try {
+      const res = await authFetch('/api/ordens-servico/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: Array.from(selectedIds),
+          action: 'update_status',
+          payload: { status: action },
+        }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        await fetchOrders()
+      } else {
+        alert(json.error ?? 'Erro ao aplicar ação em lote')
+      }
+    } catch {
+      alert('Erro de conexão')
+    } finally {
+      setBatchLoading(false)
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Ordens de Serviço</h1>
-        <button
-          onClick={() => router.push('/ordens-servico/nova')}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Nova OS
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            {showFilters ? 'Ocultar filtros' : 'Filtros avançados'}
+          </button>
+          <button
+            onClick={() => router.push('/ordens-servico/nova')}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Nova OS
+          </button>
+        </div>
       </div>
+
+      {showFilters && (
+        <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-600">Cliente</label>
+            <input
+              type="text"
+              value={filterClient}
+              onChange={(e) => setFilterClient(e.target.value)}
+              placeholder="Nome do cliente…"
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-600">Data inicial</label>
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-600">Data final</label>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+            />
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setFilterClient('')
+                setFilterDateFrom('')
+                setFilterDateTo('')
+              }}
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-white"
+            >
+              Limpar
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4 border-b border-gray-200">
         <nav className="-mb-px flex space-x-4">
@@ -100,6 +221,17 @@ export default function OrdensServicoPage() {
         </nav>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="mb-3">
+          <BatchActionToolbar
+            selectedCount={selectedIds.size}
+            actions={BATCH_ACTIONS}
+            onAction={handleBatchAction}
+            loading={batchLoading}
+          />
+        </div>
+      )}
+
       {loading && <p className="text-gray-500">Carregando…</p>}
       {error && <p className="text-red-600">{error}</p>}
 
@@ -108,6 +240,14 @@ export default function OrdensServicoPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={orders.length > 0 && selectedIds.size === orders.length}
+                    onChange={toggleSelectAll}
+                    className="rounded"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Número</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Cliente</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Veículo</th>
@@ -120,7 +260,15 @@ export default function OrdensServicoPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {orders.map((order) => (
-                <tr key={order.id}>
+                <tr key={order.id} className={selectedIds.has(order.id) ? 'bg-blue-50' : ''}>
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(order.id)}
+                      onChange={() => toggleSelect(order.id)}
+                      className="rounded"
+                    />
+                  </td>
                   <td className="px-4 py-3 font-mono font-medium text-gray-900">{order.number}</td>
                   <td className="px-4 py-3 text-gray-700">{order.customer.name}</td>
                   <td className="px-4 py-3 text-gray-700">
@@ -155,7 +303,7 @@ export default function OrdensServicoPage() {
               ))}
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                     Nenhuma ordem de serviço encontrada
                   </td>
                 </tr>
@@ -167,3 +315,4 @@ export default function OrdensServicoPage() {
     </div>
   )
 }
+

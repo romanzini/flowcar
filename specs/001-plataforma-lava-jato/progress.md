@@ -430,3 +430,32 @@ Started: 2026-05-08 16:18:14
 - Low stock count must be computed in application layer (JS filter) as Prisma v7 doesn't support column-to-column comparisons
 - Dashboard KPI endpoint is at /api/dashboard/kpis; onboarding state at /api/onboarding/state (both created alongside US8)
 ---
+
+---
+## Iteration 9 - 2026-05-09T09:14:30
+**User Story**: Phase 12 — US-009 Configurações do Sistema
+**Tasks Completed**: 
+- [x] T121: src/lib/validations/settings.ts — CarWashConfig update + ServiceType create/update Zod schemas
+- [x] T122: src/server/services/settings.service.ts — getConfig, upsertConfig (slug uniqueness guard), uploadLogo (magic bytes + MinIO), listServiceTypes, createServiceType, updateServiceType, deactivateServiceType
+- [x] T123: src/app/api/configuracoes/route.ts — GET + PATCH (JSON or multipart logo upload), GERENTE only
+- [x] T124: src/app/api/configuracoes/tipos-servico/route.ts — GET (public) + POST (GERENTE only)
+- [x] T125: src/app/api/configuracoes/tipos-servico/[id]/route.ts — PATCH + DELETE (GERENTE only)
+- [x] T126: src/app/(dashboard)/configuracoes/page.tsx — settings page (GERENTE guard after hooks), CarWashConfig form + ServiceType table with create/edit/deactivate
+- [x] T127: src/components/forms/CarWashConfigForm.tsx — RHF+Zod form with logo file upload section
+- [x] T128: src/components/forms/ServiceTypeForm.tsx — RHF+Zod form for service types
+**Tasks Remaining in Story**: None - story complete
+**Commit**: 18d3241
+**Files Changed**: 
+- src/lib/validations/settings.ts
+- src/server/services/settings.service.ts
+- src/app/api/configuracoes/route.ts
+- src/app/api/configuracoes/tipos-servico/route.ts
+- src/app/api/configuracoes/tipos-servico/[id]/route.ts
+- src/app/(dashboard)/configuracoes/page.tsx
+- src/components/forms/CarWashConfigForm.tsx
+- src/components/forms/ServiceTypeForm.tsx
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- PATCH handler returning two different types (multipart logo vs JSON config) causes withErrorHandler generic inference failure; fix with `as unknown as Record<string, unknown>` cast on each ok() return
+- React hooks called conditionally (early return before hooks) triggers rules-of-hooks lint error; always place hooks before any conditional returns; use `if (user?.role !== 'GERENTE') return` inside useEffect to skip fetching instead of early-returning before hooks
+---

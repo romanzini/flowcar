@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { initWorkers } from '@/lib/jobs'
+
+// Bootstrap BullMQ workers once on server startup
+initWorkers()
 
 const inter = Inter({ subsets: ['latin'] })
 

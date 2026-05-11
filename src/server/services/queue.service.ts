@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { enqueueNotification } from './whatsapp.service'
 
 export async function insertQueueEntry(
   tenantId: string,
@@ -51,7 +52,7 @@ export async function resequencePositions(tenantId: string): Promise<void> {
   const waitingEntries = await prisma.queueEntry.findMany({
     where: { tenantId, status: 'AGUARDANDO' },
     orderBy: { enteredAt: 'asc' },
-    select: { id: true },
+    select: { id: true, serviceOrderId: true },
   })
 
   await Promise.all(
@@ -60,6 +61,21 @@ export async function resequencePositions(tenantId: string): Promise<void> {
         where: { id: entry.id },
         data: { position: index + 1 },
       })
+    )
+  )
+
+  // Notify customers whose queue position changed
+  const serviceOrderIds = waitingEntries.map((e) => e.serviceOrderId)
+  if (serviceOrderIds.length === 0) return
+
+  const orders = await prisma.serviceOrder.findMany({
+    where: { id: { in: serviceOrderIds } },
+    select: { id: true, customerId: true },
+  })
+
+  await Promise.allSettled(
+    orders.map((order) =>
+      enqueueNotification(tenantId, order.customerId, order.id, 'FILA_ATUALIZADA')
     )
   )
 }

@@ -7,6 +7,7 @@ import {
   removeFromQueue,
   resequencePositions,
 } from './queue.service'
+import { enqueueNotification } from './whatsapp.service'
 import type { OSCreateInput, OSUpdateInput, OSItemInput } from '@/lib/validations/service-order'
 
 const osSelect = {
@@ -139,7 +140,7 @@ export async function transitionStatus(
 ) {
   const os = await prisma.serviceOrder.findFirst({
     where: { id, tenantId },
-    select: { id: true, status: true, number: true },
+    select: { id: true, status: true, number: true, customerId: true },
   })
   if (!os) throw new NotFoundError()
 
@@ -166,10 +167,12 @@ export async function transitionStatus(
     updateData.completedAt = now
     const tenantId_ = await removeFromQueue(id)
     if (tenantId_) await resequencePositions(tenantId_)
+    void enqueueNotification(tenantId, os.customerId, id, 'OS_CONCLUIDA').catch(() => {})
   } else if (targetStatus === 'CANCELADO') {
     updateData.cancelledAt = now
     const tenantId_ = await removeFromQueue(id)
     if (tenantId_) await resequencePositions(tenantId_)
+    void enqueueNotification(tenantId, os.customerId, id, 'OS_CANCELADA').catch(() => {})
   }
 
   return prisma.serviceOrder.update({
