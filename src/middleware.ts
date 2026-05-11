@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import { verifyAccessToken } from '@/lib/auth/jwt'
 import { logAccessDenied } from '@/lib/logging/logger'
+
+const minioEndpoint = process.env.S3_ENDPOINT ?? 'http://localhost:9000'
+
+function buildCsp(nonce: string): string {
+  return [
+    "default-src 'self'",
+    "script-src 'self'",
+    `style-src 'self' 'nonce-${nonce}'`,
+    `img-src 'self' data: ${minioEndpoint}`,
+    "font-src 'self'",
+    "connect-src 'self'",
+    "frame-ancestors 'none'",
+    'upgrade-insecure-requests',
+  ].join('; ')
+}
 
 // Routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -29,10 +45,15 @@ const GERENTE_ONLY_ROUTES = [
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+  const nonce = randomBytes(16).toString('base64')
+  const csp = buildCsp(nonce)
 
   // Allow public routes
   if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
-    return NextResponse.next()
+    const res = NextResponse.next()
+    res.headers.set('Content-Security-Policy', csp)
+    res.headers.set('x-nonce', nonce)
+    return res
   }
 
   // Allow Next.js internals
@@ -69,13 +90,17 @@ export async function middleware(req: NextRequest) {
       )
     }
 
-    // Forward identity headers to Route Handlers
+    // Forward identity headers and nonce to Route Handlers / Server Components
     const headers = new Headers(req.headers)
     headers.set('x-user-id', payload.userId)
     headers.set('x-tenant-id', payload.tenantId)
     headers.set('x-user-role', payload.role)
+    headers.set('x-nonce', nonce)
 
-    return NextResponse.next({ request: { headers } })
+    const res = NextResponse.next({ request: { headers } })
+    res.headers.set('Content-Security-Policy', csp)
+    res.headers.set('x-nonce', nonce)
+    return res
   } catch {
     return NextResponse.json(
       { success: false, error: 'Token inválido ou expirado' },

@@ -1,8 +1,6 @@
 import type { NextConfig } from 'next'
 
-const minioEndpoint = process.env.S3_ENDPOINT ?? 'http://localhost:9000'
-
-// SEC-003: HTTP security headers applied to all routes
+// SEC-003: Static security headers (CSP is set dynamically per-request in middleware with a per-request nonce)
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -10,19 +8,6 @@ const securityHeaders = [
   {
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=()',
-  },
-  {
-    key: 'Content-Security-Policy',
-    value: [
-      "default-src 'self'",
-      "script-src 'self'",
-      "style-src 'self' 'unsafe-inline'",
-      `img-src 'self' data: ${minioEndpoint}`,
-      "font-src 'self'",
-      "connect-src 'self'",
-      "frame-ancestors 'none'",
-      'upgrade-insecure-requests',
-    ].join('; '),
   },
 ]
 

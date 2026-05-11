@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { headers } from 'next/headers'
 import './globals.css'
 import { initWorkers } from '@/lib/jobs'
 
@@ -13,14 +14,20 @@ export const metadata: Metadata = {
   description: 'Plataforma micro-SaaS para gestão de lava-jatos',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const headersList = await headers()
+  const nonce = headersList.get('x-nonce') ?? ''
+
   return (
     <html lang="pt-BR">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {nonce && <style nonce={nonce} />}
+        {children}
+      </body>
     </html>
   )
 }

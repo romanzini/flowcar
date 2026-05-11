@@ -59,6 +59,11 @@ export async function GET(req: NextRequest) {
       throw new UnprocessableError('Data inicial deve ser anterior à data final')
     }
 
+    const rangeDays = (to.getTime() - from.getTime()) / 86_400_000
+    if (rangeDays > 366) {
+      throw new UnprocessableError('Intervalo máximo de 366 dias')
+    }
+
     const filter = { tenantId, from, to }
     const fromIso = from.toISOString()
     const toIso = to.toISOString()

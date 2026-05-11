@@ -4,6 +4,11 @@ import { randomUUID } from 'crypto'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
+if (process.env.NODE_ENV === 'production') {
+  console.error('Seed must not be run in production')
+  process.exit(1)
+}
+
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL ?? 'postgresql://flowcar:flowcar@localhost:5432/flowcar',
 })

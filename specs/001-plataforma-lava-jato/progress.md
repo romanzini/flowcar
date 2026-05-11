@@ -489,3 +489,21 @@ Started: 2026-05-08 16:18:14
 - MinIO bucket must be created before /api/health returns healthy; use `mc mb` via Docker to create it
 - Seed file requires @prisma/adapter-pg and uses direct PrismaClient instantiation (same pattern as src/lib/prisma.ts)
 ---
+
+---
+## Iteration 2 - 2026-05-11T09:35:01-03:00
+**User Story**: Phase 15 Medium Security Remediation (TASK-SEC-001, TASK-SEC-002)
+**Tasks Completed**: 
+- [x] TASK-SEC-001: Hardened rate-limit IP extraction in contract signing route
+- [x] TASK-SEC-002: Stripped PII (email, phone, address) from publicContractSelect
+**Tasks Remaining in Story**: None - Medium Severity section complete
+**Commit**: f5861df
+**Files Changed**: 
+- src/app/api/contratos/publico/[token]/route.ts
+- src/server/services/contract.service.ts
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- Production startup assertions (throw at module level) work cleanly in Next.js route handlers
+- When extracting `params` early in a POST handler, avoid re-destructuring later in the same handler
+- publicContractSelect only exposes id+name for customer — page.tsx and client component only access customer.name, so stripping PII causes no type errors
+---
