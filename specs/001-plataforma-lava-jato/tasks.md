@@ -336,6 +336,15 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 **Checkpoint**: TASK-SEC-001 and TASK-SEC-002 merged and deployed; TASK-SEC-004/005/006 merged in a single PR (trivial one-liners); TASK-SEC-003 scheduled as a dedicated CSP hardening PR; TASK-SEC-007 merged with next seed change.
 
+### Remediation Review Findings (Post-Review 2026-05-11, second pass)
+
+**Source**: `specs/001-plataforma-lava-jato/security-reviews/2026-05-11-remediation.md`  
+**Context**: Introduced during Phase 15 implementation by Ralph.
+
+- [ ] TASK-SEC-008 **[LOW — CWE-693]** Forward the nonce in request headers for public routes in `src/middleware.ts`: the current code sets `x-nonce` only on the response for public routes, so `layout.tsx` receives an empty nonce via `headers().get('x-nonce')` for pages like `/login`, `/cadastro`, and `/contratos/assinar/[token]`. Fix: create a `reqHeaders = new Headers(req.headers)`, call `reqHeaders.set('x-nonce', nonce)`, and pass it via `NextResponse.next({ request: { headers: reqHeaders } })` — mirroring the authenticated route path. References: REM-001 in `2026-05-11-remediation.md`.
+- [ ] TASK-SEC-009 **[LOW — CWE-436]** Move the `TRUSTED_PROXY_IPS` production assertion out of the route module into a startup-path call. Create `src/lib/startup.ts` exporting `assertProductionConfig()` (throws if `NODE_ENV === 'production' && !TRUSTED_PROXY_IPS`), import and call it from `src/app/layout.tsx` alongside `initWorkers()`, and remove the top-level `if` block from `src/app/api/contratos/publico/[token]/route.ts`. References: REM-002 in `2026-05-11-remediation.md`.
+- [ ] TASK-SEC-010 **[INFORMATIONAL — CWE-20]** Add a token length guard in `src/app/api/contratos/publico/[token]/route.ts` before the dual rate-limit check: `if (token.length > 128) throw new NotFoundError('Contrato não encontrado ou link expirado')`. This prevents abnormally large Redis keys from raw URL path params. References: REM-003 in `2026-05-11-remediation.md`.
+
 ---
 
 ## Dependencies & Execution Order
