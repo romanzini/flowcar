@@ -14,6 +14,10 @@ import {
 } from '@/lib/api-error'
 import { ok } from '@/lib/utils'
 
+if (process.env.NODE_ENV === 'production' && !process.env.TRUSTED_PROXY_IPS) {
+  throw new Error('TRUSTED_PROXY_IPS must be set in production')
+}
+
 interface Params {
   params: Promise<{ token: string }>
 }
@@ -44,8 +48,8 @@ function getClientIp(req: NextRequest): string {
   return forwardedForValues[0] ?? requestIp ?? ''
 }
 
-async function checkSigningRateLimit(ip: string): Promise<RateLimitResult> {
-  const key = `csrf:sign:attempts:${ip}`
+async function checkSigningRateLimit(rateLimitKey: string): Promise<RateLimitResult> {
+  const key = `csrf:sign:attempts:${rateLimitKey}`
   const window = 60 * 60
   const limit = 10
   const now = Date.now()
@@ -103,9 +107,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
 export async function POST(req: NextRequest, { params }: Params) {
   return withErrorHandler(async () => {
     const ip = getClientIp(req)
-    const rateLimit = await checkSigningRateLimit(ip)
+    const { token } = await params
 
-    if (!rateLimit.allowed) {
+    const [ipRateLimit, tokenRateLimit] = await Promise.all([
+      checkSigningRateLimit(ip),
+      checkSigningRateLimit(token),
+    ])
+
+    if (!ipRateLimit.allowed || !tokenRateLimit.allowed) {
       throw new TooManyRequestsError('Limite de tentativas de assinatura excedido')
     }
 
@@ -121,7 +130,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       throw new UnprocessableError(parsed.error.issues[0]?.message ?? 'Assinatura inválida')
     }
 
-    const { token } = await params
     const contract = await getContractByToken(token)
     if (!contract) {
       throw new UnprocessableError('Link de assinatura inválido ou expirado')

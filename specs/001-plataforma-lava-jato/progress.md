@@ -459,3 +459,33 @@ Started: 2026-05-08 16:18:14
 - PATCH handler returning two different types (multipart logo vs JSON config) causes withErrorHandler generic inference failure; fix with `as unknown as Record<string, unknown>` cast on each ok() return
 - React hooks called conditionally (early return before hooks) triggers rules-of-hooks lint error; always place hooks before any conditional returns; use `if (user?.role !== 'GERENTE') return` inside useEffect to skip fetching instead of early-returning before hooks
 ---
+
+---
+## Iteration N - 2026-05-11
+**User Story**: Phase 14 — Polish & Cross-Cutting Concerns (COMPLETE)
+**Tasks Completed**: 
+- [x] T138: prisma/seed.ts — 2 tenants with 3 users each, 8 service types, 10 products, 15 customers, 20 vehicles, 20 OS (5 AGUARDANDO + 2 EM_ANDAMENTO + 10 CONCLUIDO + 3 CANCELADO), 5 quotes (mixed), 3 contracts (RASCUNHO/AGUARDANDO_ASSINATURA/ASSINADO with real ContractSignature)
+- [x] T139: README.md with product overview, quickstart, architecture decisions, demo credentials, and justificativa for WhatsApp + batch operations
+- [x] T140: src/lib/jobs/index.ts BullMQ workers bootstrap (initWorkers with re-init guard); called from src/app/layout.tsx
+- [x] T141: src/components/shared/DataTable.tsx — sortable, paginated, plain HTML/Tailwind (no shadcn/ui dependency)
+- [x] T142: src/lib/query-client.ts + src/app/(dashboard)/providers.tsx — TanStack React Query 5 singleton + QueryClientProvider
+- [x] T143: Seed validated against live PostgreSQL; /api/health returns 200 with both postgres+minio healthy
+- [x] T144: Docker Compose all 3 services healthy (postgres, redis, minio); /api/health 200 in < 3s
+- [x] T145: Security review — tenant isolation, no stack trace in responses, pre-signed URLs, login rate limiting, signedIp masked
+**Tasks Remaining in Story**: None - story complete
+**Commit**: 967163b
+**Files Changed**: 
+- README.md
+- prisma/seed.ts
+- src/app/(dashboard)/providers.tsx
+- src/app/layout.tsx
+- src/components/shared/DataTable.tsx
+- src/lib/jobs/index.ts
+- src/lib/query-client.ts
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- The edit tool appends when old_str doesn't match exactly (leading/trailing whitespace matters); use bash heredoc/cat to overwrite files when needed
+- DataTable must NOT import from '@/components/ui/' — shadcn/ui components haven't been added to this project; use plain HTML + Tailwind
+- MinIO bucket must be created before /api/health returns healthy; use `mc mb` via Docker to create it
+- Seed file requires @prisma/adapter-pg and uses direct PrismaClient instantiation (same pattern as src/lib/prisma.ts)
+---

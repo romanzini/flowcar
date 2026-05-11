@@ -313,6 +313,31 @@ description: "Task list for FlowCar — Plataforma Micro-SaaS para Gestão de La
 
 ---
 
+## Phase 15: Security Remediation (Post-Review 2026-05-11)
+
+**Source**: Security review `specs/001-plataforma-lava-jato/security-reviews/2026-05-11-branch.md`  
+**Purpose**: Address findings from branch review — all items are self-contained; none require architecture changes.
+
+### Medium Severity (remediate first)
+
+- [x] TASK-SEC-001 **[MEDIUM — CWE-290]** Harden rate-limit IP extraction in `src/app/api/contratos/publico/[token]/route.ts`: (1) Add production startup assertion — throw `Error('TRUSTED_PROXY_IPS must be set in production')` if `process.env.NODE_ENV === 'production' && !process.env.TRUSTED_PROXY_IPS`; (2) Add a secondary rate-limit key scoped to the signing token (`csrf:sign:attempts:${token}`, same sliding-window/limit as the IP key) so that even if IP is spoofed the per-contract limit still holds. References: SEC-001 in `2026-05-11-branch.md`.
+- [x] TASK-SEC-002 **[MEDIUM — CWE-359]** Remove unused PII from the public contract token response in `src/server/services/contract.service.ts`: strip `email`, `phone`, and `address` from `publicContractSelect.customer` — keep only `id` and `name`. Verify `src/app/contratos/assinar/[token]/page.tsx` and `src/components/contracts/PublicContractSigningClient.tsx` compile and render correctly after the change. References: SEC-002 in `2026-05-11-branch.md`.
+
+### Low Severity
+
+- [ ] TASK-SEC-003 **[LOW — CWE-693]** Migrate `style-src` in `next.config.ts` from `'unsafe-inline'` to a per-request nonce: (1) generate a cryptographically random nonce in `src/middleware.ts` (`randomBytes(16).toString('base64')`); (2) forward it via response header `x-nonce`; (3) read it in `src/app/layout.tsx` to inject `<style nonce={nonce}>` and the CSP header for SSR pages; (4) update `securityHeaders` in `next.config.ts` to use `'nonce-{NONCE}'` instead of `'unsafe-inline'`. Note: this is the highest-effort item (~3 hrs) — defer if release is imminent; acceptable as technical debt with tracking. References: SEC-003 in `2026-05-11-branch.md`.
+- [ ] TASK-SEC-004 **[LOW — CWE-20]** Add `from ≤ to` date validation in `src/app/api/relatorios/export/route.ts` — insert `if (from > to) { throw new UnprocessableError('Data inicial deve ser anterior à data final') }` immediately after the `isNaN` checks (mirrors the guard already present in `src/app/api/relatorios/route.ts:52`). References: SEC-004 in `2026-05-11-branch.md`.
+- [ ] TASK-SEC-005 **[LOW — CWE-770]** Cap report date range to 366 days in both `src/app/api/relatorios/route.ts` and `src/app/api/relatorios/export/route.ts`: after the `from ≤ to` check add `const rangeDays = (to.getTime() - from.getTime()) / 86_400_000; if (rangeDays > 366) throw new UnprocessableError('Intervalo máximo de 366 dias')`. References: SEC-005 in `2026-05-11-branch.md`.
+- [ ] TASK-SEC-006 **[LOW — CWE-770]** Add upper-bound constraint to batch IDs array in `src/lib/validations/batch.ts`: change `z.array(z.string().cuid()).refine(...)` to `z.array(z.string().cuid()).min(1, 'Selecione ao menos uma OS').max(200, 'Máximo de 200 registros por operação em lote')` and remove the separate `.refine()` call. References: SEC-006 in `2026-05-11-branch.md`.
+
+### Informational (technical debt)
+
+- [ ] TASK-SEC-007 **[INFORMATIONAL — CWE-798]** Add a `NODE_ENV` production guard at the top of `prisma/seed.ts` to prevent accidental production seeding: `if (process.env.NODE_ENV === 'production') { console.error('Seed must not be run in production'); process.exit(1) }`. Optionally read seed passwords from env vars (`SEED_GERENTE_PASSWORD`, `SEED_FUNC_PASSWORD`) with safe local defaults. References: SEC-007 in `2026-05-11-branch.md`.
+
+**Checkpoint**: TASK-SEC-001 and TASK-SEC-002 merged and deployed; TASK-SEC-004/005/006 merged in a single PR (trivial one-liners); TASK-SEC-003 scheduled as a dedicated CSP hardening PR; TASK-SEC-007 merged with next seed change.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

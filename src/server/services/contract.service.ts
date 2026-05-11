@@ -71,9 +71,6 @@ const publicContractSelect = {
     select: {
       id: true,
       name: true,
-      email: true,
-      phone: true,
-      address: true,
     },
   },
 } as const
