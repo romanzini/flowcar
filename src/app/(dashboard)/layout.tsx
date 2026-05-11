@@ -1,0 +1,21 @@
+import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
+import { SessionProvider } from '@/components/shared/SessionProvider'
+import DashboardAuthGuard from '@/components/shared/DashboardAuthGuard'
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies()
+  const refreshToken = cookieStore.get('refresh_token')?.value
+
+  if (!refreshToken) {
+    redirect('/login')
+  }
+
+  return (
+    <SessionProvider>
+      <DashboardAuthGuard>
+        {children}
+      </DashboardAuthGuard>
+    </SessionProvider>
+  )
+}

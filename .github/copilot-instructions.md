@@ -1,4 +1,4 @@
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+Para contexto adicional sobre tecnologias, estrutura, comandos e decisões
+da feature ativa, leia `specs/001-plataforma-lava-jato/plan.md`
 <!-- SPECKIT END -->
