@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { generateSequentialNumber } from '@/lib/utils'
+import { generateSequentialNumber, withSequentialNumberRetry } from '@/lib/utils'
 import { NotFoundError, UnprocessableError } from '@/lib/api-error'
 import { insertQueueEntry } from './queue.service'
 import type {
@@ -67,38 +67,41 @@ export async function createQuote(tenantId: string, input: QuoteCreateInput) {
     if (!vehicle) throw new NotFoundError('Veículo não encontrado')
   }
 
-  const number = await generateSequentialNumber(tenantId, 'ORC', 'quote')
   const total = calcTotal(input.items)
 
-  return prisma.$transaction(async (tx) => {
-    const quote = await tx.quote.create({
-      data: {
-        tenantId,
-        customerId: input.customerId,
-        vehicleId: input.vehicleId ?? null,
-        number,
-        validUntil: new Date(input.validUntil),
-        totalAmount: total,
-      },
-    })
+  return withSequentialNumberRetry(() =>
+    prisma.$transaction(async (tx) => {
+      const number = await generateSequentialNumber(tenantId, 'ORC', 'quote', tx)
 
-    await tx.quoteItem.createMany({
-      data: input.items.map((item) => ({
-        quoteId: quote.id,
-        serviceTypeId: item.serviceTypeId ?? null,
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discountAmount: item.discountAmount ?? 0,
-        subtotal: calcItemSubtotal(item),
-      })),
-    })
+      const quote = await tx.quote.create({
+        data: {
+          tenantId,
+          customerId: input.customerId,
+          vehicleId: input.vehicleId ?? null,
+          number,
+          validUntil: new Date(input.validUntil),
+          totalAmount: total,
+        },
+      })
 
-    return tx.quote.findFirstOrThrow({
-      where: { id: quote.id },
-      select: quoteSelect,
+      await tx.quoteItem.createMany({
+        data: input.items.map((item) => ({
+          quoteId: quote.id,
+          serviceTypeId: item.serviceTypeId ?? null,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discountAmount: item.discountAmount ?? 0,
+          subtotal: calcItemSubtotal(item),
+        })),
+      })
+
+      return tx.quote.findFirstOrThrow({
+        where: { id: quote.id },
+        select: quoteSelect,
+      })
     })
-  })
+  )
 }
 
 export async function updateQuote(id: string, tenantId: string, input: QuoteUpdateInput) {
@@ -220,46 +223,48 @@ export async function convertToOS(id: string, tenantId: string) {
     throw new UnprocessableError('Orçamento precisa ter um veículo para converter em OS')
   }
 
-  const osNumber = await generateSequentialNumber(tenantId, 'OS', 'serviceOrder')
+  const serviceOrderId = await withSequentialNumberRetry(() =>
+    prisma.$transaction(async (tx) => {
+      const osNumber = await generateSequentialNumber(tenantId, 'OS', 'serviceOrder', tx)
 
-  const serviceOrderId = await prisma.$transaction(async (tx) => {
-    const serviceOrder = await tx.serviceOrder.create({
-      data: {
-        tenantId,
-        customerId: quote.customerId,
-        vehicleId: quote.vehicleId!,
-        number: osNumber,
-        status: 'AGUARDANDO',
-        sourceQuoteId: id,
-        subtotalAmount: quote.items.reduce(
-          (s, i) => s + Number(i.unitPrice) * Number(i.quantity),
-          0
-        ),
-        discountAmount: quote.items.reduce((s, i) => s + Number(i.discountAmount), 0),
-        totalAmount: quote.items.reduce((s, i) => s + Number(i.subtotal), 0),
-      },
+      const serviceOrder = await tx.serviceOrder.create({
+        data: {
+          tenantId,
+          customerId: quote.customerId,
+          vehicleId: quote.vehicleId!,
+          number: osNumber,
+          status: 'AGUARDANDO',
+          sourceQuoteId: id,
+          subtotalAmount: quote.items.reduce(
+            (s, i) => s + Number(i.unitPrice) * Number(i.quantity),
+            0
+          ),
+          discountAmount: quote.items.reduce((s, i) => s + Number(i.discountAmount), 0),
+          totalAmount: quote.items.reduce((s, i) => s + Number(i.subtotal), 0),
+        },
+      })
+
+      await tx.serviceOrderItem.createMany({
+        data: quote.items.map((item) => ({
+          serviceOrderId: serviceOrder.id,
+          kind: 'SERVICO' as const,
+          serviceTypeId: item.serviceTypeId ?? null,
+          description: item.description,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+          discountAmount: Number(item.discountAmount),
+          subtotal: Number(item.subtotal),
+        })),
+      })
+
+      await tx.quote.update({
+        where: { id },
+        data: { convertedOrderId: serviceOrder.id },
+      })
+
+      return serviceOrder.id
     })
-
-    await tx.serviceOrderItem.createMany({
-      data: quote.items.map((item) => ({
-        serviceOrderId: serviceOrder.id,
-        kind: 'SERVICO' as const,
-        serviceTypeId: item.serviceTypeId ?? null,
-        description: item.description,
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.unitPrice),
-        discountAmount: Number(item.discountAmount),
-        subtotal: Number(item.subtotal),
-      })),
-    })
-
-    await tx.quote.update({
-      where: { id },
-      data: { convertedOrderId: serviceOrder.id },
-    })
-
-    return serviceOrder.id
-  })
+  )
 
   await insertQueueEntry(tenantId, serviceOrderId)
 

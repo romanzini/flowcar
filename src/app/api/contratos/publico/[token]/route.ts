@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto'
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { redis } from '@/lib/auth/redis'
+import { getRedis } from '@/lib/auth/redis'
 import { uploadFile } from '@/lib/storage/upload'
 import { getContractByToken, signContract } from '@/server/services/contract.service'
 import { signatureSubmitSchema } from '@/lib/validations/contract'
@@ -13,10 +13,6 @@ import {
   withErrorHandler,
 } from '@/lib/api-error'
 import { ok } from '@/lib/utils'
-
-if (process.env.NODE_ENV === 'production' && !process.env.TRUSTED_PROXY_IPS) {
-  throw new Error('TRUSTED_PROXY_IPS must be set in production')
-}
 
 interface Params {
   params: Promise<{ token: string }>
@@ -49,6 +45,7 @@ function getClientIp(req: NextRequest): string {
 }
 
 async function checkSigningRateLimit(rateLimitKey: string): Promise<RateLimitResult> {
+  const redis = getRedis()
   const key = `csrf:sign:attempts:${rateLimitKey}`
   const window = 60 * 60
   const limit = 10
@@ -82,6 +79,9 @@ function parseSignatureBuffer(signatureDataUrl: string): Buffer {
 export async function GET(_req: NextRequest, { params }: Params) {
   return withErrorHandler(async () => {
     const { token } = await params
+    if (token.length > 128) {
+      throw new NotFoundError('Contrato não encontrado ou link expirado')
+    }
     const contract = await getContractByToken(token)
 
     if (!contract) {
@@ -108,6 +108,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   return withErrorHandler(async () => {
     const ip = getClientIp(req)
     const { token } = await params
+    if (token.length > 128) {
+      throw new NotFoundError('Contrato não encontrado ou link expirado')
+    }
 
     const [ipRateLimit, tokenRateLimit] = await Promise.all([
       checkSigningRateLimit(ip),

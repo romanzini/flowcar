@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
 import type { ApiResponse } from '@/types/api'
@@ -5,47 +6,95 @@ import { NextResponse } from 'next/server'
 
 // ─── Sequential number generation (SEC-011: atomic DB-level) ──────────────────
 
+const sequentialNumberTableMap = {
+  serviceOrder: 'ServiceOrder',
+  quote: 'Quote',
+  contract: 'Contract',
+} as const
+
 export async function generateSequentialNumber(
   tenantId: string,
   prefix: 'OS' | 'ORC' | 'CTR',
-  model: 'serviceOrder' | 'quote' | 'contract'
+  model: 'serviceOrder' | 'quote' | 'contract',
+  tx?: Prisma.TransactionClient
 ): Promise<string> {
-  // Use a transaction with SELECT FOR UPDATE to prevent concurrent duplicates
-  return prisma.$transaction(async (tx) => {
-    let maxNumber = 0
+  const client = tx ?? prisma
+  const tableName = sequentialNumberTableMap[model]
+  const rows = await client.$queryRawUnsafe<Array<{ currentValue: number }>>(
+    `
+      INSERT INTO "SequenceCounter" ("tenantId", "scope", "currentValue", "updatedAt")
+      VALUES (
+        $1,
+        $2,
+        COALESCE(
+          (
+            SELECT MAX(CAST(SUBSTRING(number FROM $3) AS INTEGER))
+            FROM "${tableName}"
+            WHERE "tenantId" = $1
+              AND number LIKE $4
+          ),
+          0
+        ) + 1,
+        NOW()
+      )
+      ON CONFLICT ("tenantId", "scope")
+      DO UPDATE SET
+        "currentValue" = "SequenceCounter"."currentValue" + 1,
+        "updatedAt" = NOW()
+      RETURNING "currentValue"
+    `,
+    tenantId,
+    model,
+    prefix.length + 2,
+    `${prefix}-%`
+  )
 
-    if (model === 'serviceOrder') {
-      const result = await tx.$queryRaw<[{ max_num: number | null }]>`
-        SELECT MAX(CAST(SUBSTRING(number FROM ${prefix.length + 2}) AS INTEGER)) AS max_num
-        FROM "ServiceOrder"
-        WHERE "tenantId" = ${tenantId}
-        AND number LIKE ${prefix + '-%'}
-        FOR UPDATE
-      `
-      maxNumber = result[0]?.max_num ?? 0
-    } else if (model === 'quote') {
-      const result = await tx.$queryRaw<[{ max_num: number | null }]>`
-        SELECT MAX(CAST(SUBSTRING(number FROM ${prefix.length + 2}) AS INTEGER)) AS max_num
-        FROM "Quote"
-        WHERE "tenantId" = ${tenantId}
-        AND number LIKE ${prefix + '-%'}
-        FOR UPDATE
-      `
-      maxNumber = result[0]?.max_num ?? 0
-    } else if (model === 'contract') {
-      const result = await tx.$queryRaw<[{ max_num: number | null }]>`
-        SELECT MAX(CAST(SUBSTRING(number FROM ${prefix.length + 2}) AS INTEGER)) AS max_num
-        FROM "Contract"
-        WHERE "tenantId" = ${tenantId}
-        AND number LIKE ${prefix + '-%'}
-        FOR UPDATE
-      `
-      maxNumber = result[0]?.max_num ?? 0
+  const currentValue = rows[0]?.currentValue
+
+  if (!Number.isInteger(currentValue) || currentValue < 1) {
+    throw new Error(`Falha ao gerar número sequencial para ${model}`)
+  }
+
+  return `${prefix}-${String(currentValue).padStart(4, '0')}`
+}
+
+export function isSequentialNumberConflict(error: unknown): boolean {
+  const prismaError = error as {
+    code?: string
+    meta?: { target?: string[] | string }
+  }
+
+  if (prismaError.code !== 'P2002') {
+    return false
+  }
+
+  const target = prismaError.meta?.target
+
+  if (Array.isArray(target)) {
+    return target.includes('tenantId') && target.includes('number')
+  }
+
+  if (typeof target === 'string') {
+    return target.includes('tenantId') && target.includes('number')
+  }
+
+  return true
+}
+
+export async function withSequentialNumberRetry<T>(operation: () => Promise<T>): Promise<T> {
+  const maxAttempts = 5
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await operation()
+    } catch (error) {
+      if (!isSequentialNumberConflict(error) || attempt === maxAttempts) {
+        throw error
+      }
     }
+  }
 
-    const nextNumber = (maxNumber ?? 0) + 1
-    return `${prefix}-${String(nextNumber).padStart(4, '0')}`
-  })
+  throw new Error('Falha ao gerar número sequencial')
 }
 
 export function generateUUID(): string {

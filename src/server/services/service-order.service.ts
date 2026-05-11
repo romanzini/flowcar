@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { generateSequentialNumber } from '@/lib/utils'
+import { generateSequentialNumber, withSequentialNumberRetry } from '@/lib/utils'
 import { NotFoundError, UnprocessableError } from '@/lib/api-error'
 import {
   insertQueueEntry,
@@ -110,20 +110,24 @@ export async function createOS(tenantId: string, userId: string, input: OSCreate
   })
   if (!customer) throw new NotFoundError('Cliente não encontrado')
 
-  const number = await generateSequentialNumber(tenantId, 'OS', 'serviceOrder')
+  const serviceOrder = await withSequentialNumberRetry(() =>
+    prisma.$transaction(async (tx) => {
+      const number = await generateSequentialNumber(tenantId, 'OS', 'serviceOrder', tx)
 
-  const serviceOrder = await prisma.serviceOrder.create({
-    data: {
-      tenantId,
-      customerId: input.customerId,
-      vehicleId: input.vehicleId,
-      responsibleUserId: input.responsibleUserId ?? userId,
-      number,
-      status: 'AGUARDANDO',
-      sourceQuoteId: input.sourceQuoteId ?? null,
-    },
-    select: osSelect,
-  })
+      return tx.serviceOrder.create({
+        data: {
+          tenantId,
+          customerId: input.customerId,
+          vehicleId: input.vehicleId,
+          responsibleUserId: input.responsibleUserId ?? userId,
+          number,
+          status: 'AGUARDANDO',
+          sourceQuoteId: input.sourceQuoteId ?? null,
+        },
+        select: osSelect,
+      })
+    })
+  )
 
   await insertQueueEntry(tenantId, serviceOrder.id)
 

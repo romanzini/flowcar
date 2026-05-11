@@ -2,14 +2,28 @@ import Redis from 'ioredis'
 
 const globalForRedis = globalThis as unknown as { redis: Redis | undefined }
 
-export const redis =
-  globalForRedis.redis ??
-  new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+function createRedisClient() {
+  return new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
     maxRetriesPerRequest: 3,
     lazyConnect: true,
   })
+}
 
-if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redis
+export function getRedis() {
+  if (!globalForRedis.redis) {
+    globalForRedis.redis = createRedisClient()
+  }
+
+  return globalForRedis.redis
+}
+
+// ─── BullMQ connection (maxRetriesPerRequest must be null for blocking commands) ─
+export function createBullMQConnection() {
+  return new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+  })
+}
 
 // ─── Refresh token TTL (7 days in seconds) ────────────────────────────────────
 const REFRESH_TTL = 7 * 24 * 60 * 60
@@ -21,6 +35,7 @@ export async function storeRefreshToken(
   userId: string,
   tenantId: string
 ): Promise<void> {
+  const redis = getRedis()
   const key = `auth:refresh:${tokenId}`
   await redis.setex(key, REFRESH_TTL, JSON.stringify({ userId, tenantId, createdAt: Date.now() }))
   await redis.sadd(`auth:user:${userId}:tokens`, tokenId)
@@ -30,17 +45,20 @@ export async function storeRefreshToken(
 export async function getRefreshToken(
   tokenId: string
 ): Promise<{ userId: string; tenantId: string } | null> {
+  const redis = getRedis()
   const raw = await redis.get(`auth:refresh:${tokenId}`)
   if (!raw) return null
   return JSON.parse(raw)
 }
 
 export async function revokeRefreshToken(tokenId: string, userId: string): Promise<void> {
+  const redis = getRedis()
   await redis.del(`auth:refresh:${tokenId}`)
   await redis.srem(`auth:user:${userId}:tokens`, tokenId)
 }
 
 export async function revokeAllUserTokens(userId: string): Promise<void> {
+  const redis = getRedis()
   const tokenIds = await redis.smembers(`auth:user:${userId}:tokens`)
   if (tokenIds.length > 0) {
     const pipeline = redis.pipeline()
@@ -55,6 +73,7 @@ export async function revokeAllUserTokens(userId: string): Promise<void> {
 // ─── Sliding-window rate limiting ─────────────────────────────────────────────
 
 export async function checkLoginRateLimit(ip: string): Promise<{ allowed: boolean; remaining: number }> {
+  const redis = getRedis()
   const key = `auth:login:attempts:${ip}`
   const window = 15 * 60 // 15 minutes
   const limit = 10

@@ -18,8 +18,8 @@ interface CustomerData {
 
 interface VehicleData {
   plate: string
-  brand: string
-  model: string
+  brand?: string | null
+  model?: string | null
   year?: number | null
 }
 

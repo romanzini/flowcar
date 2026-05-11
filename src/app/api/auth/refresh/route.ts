@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      path: '/api/auth',
+      path: '/',
       maxAge: REFRESH_COOKIE_MAX_AGE,
     })
 

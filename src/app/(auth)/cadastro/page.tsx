@@ -1,20 +1,14 @@
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
-import { verifyAccessToken } from '@/lib/auth/jwt'
+import { cookies } from 'next/headers'
 import RegisterForm from '@/components/forms/RegisterForm'
+import { hasValidRefreshSession } from '@/server/services/auth.service'
 
 export default async function CadastroPage() {
-  const headersList = await headers()
-  const authHeader = headersList.get('authorization')
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+  const cookieStore = await cookies()
+  const refreshToken = cookieStore.get('refresh_token')?.value
 
-  if (token) {
-    try {
-      await verifyAccessToken(token)
-      redirect('/dashboard')
-    } catch {
-      // Invalid token — continue to registration page
-    }
+  if (refreshToken && await hasValidRefreshSession(refreshToken)) {
+    redirect('/dashboard')
   }
 
   return (

@@ -13,9 +13,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  experimental: {
-    typedRoutes: false,
-  },
+  typedRoutes: false,
   async headers() {
     return [
       {
