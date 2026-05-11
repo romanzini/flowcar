@@ -1,12 +1,12 @@
 import { Worker, Queue } from 'bullmq'
-import { redis } from '@/lib/auth/redis'
+import { createBullMQConnection } from '@/lib/auth/redis'
 import { prisma } from '@/lib/prisma'
 
 const QUEUE_NAME = 'quote-expiration'
 
 // ─── BullMQ Queue ─────────────────────────────────────────────────────────────
 export const quoteExpirationQueue = new Queue(QUEUE_NAME, {
-  connection: redis,
+  connection: createBullMQConnection(),
   defaultJobOptions: {
     removeOnComplete: 10,
     removeOnFail: 5,
@@ -54,7 +54,7 @@ export function startQuoteExpirationWorker() {
 
       console.log(`[quote-expiration] Expired ${expiredQuotes.length} quote(s)`)
     },
-    { connection: redis }
+    { connection: createBullMQConnection() }
   )
 
   worker.on('failed', (job, err) => {

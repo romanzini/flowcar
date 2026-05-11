@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import PublicQueueDisplay from '@/components/queue/PublicQueueDisplay'
 import QueueRefreshTimer from '@/components/queue/QueueRefreshTimer'
 
@@ -22,28 +22,75 @@ interface PublicQueueData {
 }
 
 interface Props {
-  initialData: PublicQueueData
+  initialData?: PublicQueueData | null
   slug: string
 }
 
 export default function PublicQueuePage({ initialData, slug }: Props) {
-  const [data, setData] = useState<PublicQueueData>(initialData)
+  const [data, setData] = useState<PublicQueueData | null>(initialData ?? null)
+  const [loading, setLoading] = useState(!initialData)
+  const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     try {
+      setError(null)
       const res = await fetch(`/api/fila-publica/${slug}`)
+      if (res.status === 404) {
+        setData(null)
+        setError('Fila não encontrada.')
+        return
+      }
+
       if (res.ok) {
         const json = await res.json()
-        if (json.success) setData(json.data)
+        if (json.success) {
+          setData(json.data)
+          return
+        }
       }
+
+      setError('Não foi possível carregar a fila no momento.')
     } catch {
-      // silent — stale data is acceptable
+      setError((current) => current ?? 'Não foi possível carregar a fila no momento.')
+    } finally {
+      setLoading(false)
     }
   }, [slug])
+
+  useEffect(() => {
+    if (!initialData) {
+      void refresh()
+    }
+  }, [initialData, refresh])
+
+  if (loading && !data) {
+    return (
+      <main className="min-h-screen bg-background px-4 py-8">
+        <div className="mx-auto max-w-xl rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+          Carregando fila...
+        </div>
+      </main>
+    )
+  }
+
+  if (!data) {
+    return (
+      <main className="min-h-screen bg-background px-4 py-8">
+        <div className="mx-auto max-w-xl rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+          {error ?? 'Fila não encontrada.'}
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto max-w-xl space-y-6">
+        {error && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            {error}
+          </div>
+        )}
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">{data.tenantName}</h1>

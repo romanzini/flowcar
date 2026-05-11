@@ -46,6 +46,12 @@
 - Node.js 22 LTS
 - npm 10+
 
+### Fazendo o build da imagem
+
+```bash
+docker compose up --build
+```
+
 ### Subida local
 
 ```bash

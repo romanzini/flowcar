@@ -1,8 +1,10 @@
 import 'dotenv/config'
 import bcrypt from 'bcryptjs'
-import { randomUUID } from 'crypto'
+import { createHash, randomUUID } from 'crypto'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
+import { s3, S3_BUCKET } from '../src/lib/storage/s3'
 
 if (process.env.NODE_ENV === 'production') {
   console.error('Seed must not be run in production')
@@ -16,6 +18,53 @@ const prisma = new PrismaClient({ adapter })
 
 async function hash(password: string) {
   return bcrypt.hash(password, 12)
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+function buildSeedContractSignature(customerName: string): Buffer {
+  const safeCustomerName = escapeXml(customerName)
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="320" height="120" viewBox="0 0 320 120" role="img" aria-label="Assinatura seed ${safeCustomerName}">
+      <rect width="320" height="120" fill="#ffffff" />
+      <path d="M 18 70 C 44 20, 72 100, 112 56 S 168 38, 198 60 252 96, 288 48" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+      <line x1="20" y1="92" x2="300" y2="92" stroke="#94a3b8" stroke-width="1" />
+      <text x="22" y="111" font-family="Georgia, serif" font-size="18" fill="#475569">${safeCustomerName}</text>
+    </svg>
+  `.trim()
+
+  return Buffer.from(svg, 'utf8')
+}
+
+async function uploadSeedContractSignature(tenantId: string, customerName: string, index: number) {
+  const buffer = buildSeedContractSignature(customerName)
+  const checksum = createHash('sha256').update(buffer).digest('hex')
+  const objectKey = `${tenantId}/ASSINATURA_CONTRATO/seed-signature-${index}.svg`
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: objectKey,
+      Body: buffer,
+      ContentType: 'image/svg+xml',
+      Metadata: { checksum, seed: 'true' },
+    })
+  )
+
+  return {
+    bucket: S3_BUCKET,
+    objectKey,
+    mimeType: 'image/svg+xml',
+    sizeBytes: buffer.length,
+    checksum,
+  }
 }
 
 // ─── Tenant data ──────────────────────────────────────────────────────────────
@@ -383,16 +432,18 @@ async function seedTenant(tenantIndex: number) {
     })
 
     if (cd.status === 'ASSINADO') {
-      // Create a placeholder FileUpload for the signature
+      const signatureUpload = await uploadSeedContractSignature(tenant.id, customer.name, i)
+
       const sigFile = await prisma.fileUpload.create({
         data: {
           id: randomUUID(),
           tenantId: tenant.id,
           category: 'ASSINATURA_CONTRATO',
-          bucket: process.env.MINIO_BUCKET ?? 'flowcar',
-          objectKey: `${tenant.id}/assinatura_contrato/seed-signature-${i}.png`,
-          mimeType: 'image/png',
-          sizeBytes: 1024,
+          bucket: signatureUpload.bucket,
+          objectKey: signatureUpload.objectKey,
+          mimeType: signatureUpload.mimeType,
+          sizeBytes: signatureUpload.sizeBytes,
+          checksum: signatureUpload.checksum,
         },
       })
 

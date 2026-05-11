@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
 
 // Registration rate limit: max 10 per IP per hour
 async function checkRegistrationRateLimit(ip: string) {
-  const { redis } = await import('@/lib/auth/redis')
+  const { getRedis } = await import('@/lib/auth/redis')
+  const redis = getRedis()
   const key = `reg:attempts:${ip}`
   const window = 60 * 60 // 1 hour
   const limit = 10

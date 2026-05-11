@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { randomBytes } from 'crypto'
 import { verifyAccessToken } from '@/lib/auth/jwt'
 import { logAccessDenied } from '@/lib/logging/logger'
 
@@ -8,7 +7,7 @@ const minioEndpoint = process.env.S3_ENDPOINT ?? 'http://localhost:9000'
 function buildCsp(nonce: string): string {
   return [
     "default-src 'self'",
-    "script-src 'self'",
+    `script-src 'self' 'nonce-${nonce}'`,
     `style-src 'self' 'nonce-${nonce}'`,
     `img-src 'self' data: ${minioEndpoint}`,
     "font-src 'self'",
@@ -45,20 +44,34 @@ const GERENTE_ONLY_ROUTES = [
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
-  const nonce = randomBytes(16).toString('base64')
+  const nonceBytes = new Uint8Array(16)
+  crypto.getRandomValues(nonceBytes)
+  const nonce = btoa(Array.from(nonceBytes, (b) => String.fromCharCode(b)).join(''))
   const csp = buildCsp(nonce)
 
-  // Allow public routes
+  // Allow public routes — forward nonce in request headers so Server Components
+  // can read it via next/headers, mirroring the authenticated-route path below.
   if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
-    const res = NextResponse.next()
+    const reqHeaders = new Headers(req.headers)
+    reqHeaders.set('x-nonce', nonce)
+    const res = NextResponse.next({ request: { headers: reqHeaders } })
     res.headers.set('Content-Security-Policy', csp)
-    res.headers.set('x-nonce', nonce)
     return res
   }
 
   // Allow Next.js internals
   if (pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
     return NextResponse.next()
+  }
+
+  // Only enforce JWT Bearer auth on API routes.
+  // Page routes handle their own auth via DashboardLayout (refresh_token cookie).
+  if (!pathname.startsWith('/api/')) {
+    const reqHeaders = new Headers(req.headers)
+    reqHeaders.set('x-nonce', nonce)
+    const res = NextResponse.next({ request: { headers: reqHeaders } })
+    res.headers.set('Content-Security-Policy', csp)
+    return res
   }
 
   // Extract access token from Authorization header

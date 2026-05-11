@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { getPublicQueue } from '@/server/queries/queue-public'
 import { withErrorHandler, NotFoundError, TooManyRequestsError } from '@/lib/api-error'
 import { ok } from '@/lib/utils'
-import { redis } from '@/lib/auth/redis'
+import { getRedis } from '@/lib/auth/redis'
 
 export async function GET(
   req: NextRequest,
@@ -28,6 +28,7 @@ export async function GET(
 }
 
 async function checkPublicQueueRateLimit(ip: string): Promise<boolean> {
+  const redis = getRedis()
   const key = `public-queue:requests:${ip}`
   const window = 60 // 1 minute
   const limit = 60

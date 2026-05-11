@@ -1,12 +1,12 @@
 import { Worker, Queue } from 'bullmq'
-import { redis } from '@/lib/auth/redis'
+import { createBullMQConnection } from '@/lib/auth/redis'
 import { prisma } from '@/lib/prisma'
 import twilio from 'twilio'
 
 const QUEUE_NAME = 'whatsapp-notifications'
 
 export const whatsappQueue = new Queue(QUEUE_NAME, {
-  connection: redis,
+  connection: createBullMQConnection(),
   defaultJobOptions: {
     removeOnComplete: 20,
     removeOnFail: 10,
@@ -94,7 +94,7 @@ export function startWhatsAppWorker() {
         throw err
       }
     },
-    { connection: redis }
+    { connection: createBullMQConnection() }
   )
 
   worker.on('failed', (job, err) => {

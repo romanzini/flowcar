@@ -507,3 +507,29 @@ Started: 2026-05-08 16:18:14
 - When extracting `params` early in a POST handler, avoid re-destructuring later in the same handler
 - publicContractSelect only exposes id+name for customer — page.tsx and client component only access customer.name, so stripping PII causes no type errors
 ---
+
+---
+## Iteration 2 - 2026-05-11T09:38:24-03:00
+**User Story**: Phase 15 - Security Remediation (TASK-SEC-003 through TASK-SEC-007)
+**Tasks Completed**: 
+- [x] TASK-SEC-003: CSP nonce migration (middleware → layout)
+- [x] TASK-SEC-004: from ≤ to date guard in relatorios/export/route.ts
+- [x] TASK-SEC-005: 366-day range cap in both relatorios routes
+- [x] TASK-SEC-006: .min(1).max(200) in batch.ts (replaced .refine())
+- [x] TASK-SEC-007: NODE_ENV production guard in prisma/seed.ts
+**Tasks Remaining in Story**: None - story complete
+**Commit**: 8cb7417
+**Files Changed**: 
+- src/middleware.ts
+- next.config.ts
+- src/app/layout.tsx
+- src/app/api/relatorios/route.ts
+- src/app/api/relatorios/export/route.ts
+- src/lib/validations/batch.ts
+- prisma/seed.ts
+- specs/001-plataforma-lava-jato/tasks.md
+**Learnings**:
+- Next.js 15 CSP nonce pattern: generate in middleware, forward via x-nonce request header + Content-Security-Policy response header; layout reads via `headers()` (async server component)
+- When CSP is set dynamically in middleware, remove the static CSP from next.config.ts to avoid conflicts
+- Zod v4: .min()/.max() on arrays is cleaner than .refine() for bounds checking
+---

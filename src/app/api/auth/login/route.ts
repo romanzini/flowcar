@@ -20,12 +20,13 @@ export async function POST(req: NextRequest) {
 
     const response = ok(token)
 
-    // SEC-005: HttpOnly; Secure; SameSite=Strict; Path=/api/auth
+    // SEC-005: HttpOnly; Secure; SameSite=Strict; Path=/ so page routes can
+    // validate the session before client hydration.
     response.cookies.set('refresh_token', refreshTokenId, {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      path: '/api/auth',
+      path: '/',
       maxAge: REFRESH_COOKIE_MAX_AGE,
     })
 

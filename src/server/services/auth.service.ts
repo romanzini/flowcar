@@ -80,6 +80,29 @@ export async function logout(refreshTokenId: string): Promise<void> {
   await revokeRefreshToken(refreshTokenId, stored.userId)
 }
 
+export async function hasValidRefreshSession(refreshTokenId: string): Promise<boolean> {
+  try {
+    const stored = await getRefreshToken(refreshTokenId)
+    if (!stored) {
+      return false
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: stored.userId, tenantId: stored.tenantId, isActive: true },
+      select: { id: true },
+    })
+
+    if (!user) {
+      await revokeRefreshToken(refreshTokenId, stored.userId)
+      return false
+    }
+
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function refreshToken(refreshTokenId: string): Promise<{
   token: TokenResponse
   newRefreshTokenId: string

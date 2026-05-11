@@ -1,15 +1,13 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import LoginForm from '@/components/forms/LoginForm'
+import { hasValidRefreshSession } from '@/server/services/auth.service'
 
 export default async function LoginPage() {
-  // Check for existing valid session via access token stored client-side is not possible here,
-  // but we can check if the middleware forwarded the user header — if authenticated, redirect
   const cookieStore = await cookies()
   const refreshToken = cookieStore.get('refresh_token')?.value
 
-  if (refreshToken) {
-    // Attempt to redirect to dashboard — middleware will handle invalid tokens
+  if (refreshToken && await hasValidRefreshSession(refreshToken)) {
     redirect('/dashboard')
   }
 

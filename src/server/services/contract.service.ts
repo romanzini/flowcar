@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'crypto'
 import type { ContractStatus } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { ApiError, NotFoundError, UnprocessableError } from '@/lib/api-error'
-import { generateSequentialNumber } from '@/lib/utils'
+import { generateSequentialNumber, withSequentialNumberRetry } from '@/lib/utils'
 import { logContractSigned } from '@/lib/logging/logger'
 import type {
   ContractCreateInput,
@@ -116,19 +116,23 @@ async function ensureCustomerExists(customerId: string, tenantId: string) {
 export async function createContract(tenantId: string, input: ContractCreateInput) {
   await ensureCustomerExists(input.customerId, tenantId)
 
-  const number = await generateSequentialNumber(tenantId, 'CTR', 'contract')
+  return withSequentialNumberRetry(() =>
+    prisma.$transaction(async (tx) => {
+      const number = await generateSequentialNumber(tenantId, 'CTR', 'contract', tx)
 
-  return prisma.contract.create({
-    data: {
-      tenantId,
-      customerId: input.customerId,
-      number,
-      title: input.title,
-      contentHtml: input.contentHtml,
-      status: 'RASCUNHO',
-    },
-    select: contractSelect,
-  })
+      return tx.contract.create({
+        data: {
+          tenantId,
+          customerId: input.customerId,
+          number,
+          title: input.title,
+          contentHtml: input.contentHtml,
+          status: 'RASCUNHO',
+        },
+        select: contractSelect,
+      })
+    })
+  )
 }
 
 export async function generateSigningLink(id: string, tenantId: string) {

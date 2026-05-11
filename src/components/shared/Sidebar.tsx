@@ -11,14 +11,14 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Início', roles: ['GERENTE', 'FUNCIONARIO'] },
-  { href: '/dashboard/ordens-servico', label: 'Ordens de Serviço', roles: ['GERENTE', 'FUNCIONARIO'] },
-  { href: '/dashboard/clientes', label: 'Clientes', roles: ['GERENTE', 'FUNCIONARIO'] },
-  { href: '/dashboard/inventario', label: 'Estoque', roles: ['GERENTE', 'FUNCIONARIO'] },
-  { href: '/dashboard/orcamentos', label: 'Orçamentos', roles: ['GERENTE', 'FUNCIONARIO'] },
-  { href: '/dashboard/funcionarios', label: 'Funcionários', roles: ['GERENTE'] },
-  { href: '/dashboard/contratos', label: 'Contratos', roles: ['GERENTE'] },
-  { href: '/dashboard/relatorios', label: 'Relatórios', roles: ['GERENTE'] },
-  { href: '/dashboard/configuracoes', label: 'Configurações', roles: ['GERENTE'] },
+  { href: '/ordens-servico', label: 'Ordens de Serviço', roles: ['GERENTE', 'FUNCIONARIO'] },
+  { href: '/clientes', label: 'Clientes', roles: ['GERENTE', 'FUNCIONARIO'] },
+  { href: '/inventario', label: 'Estoque', roles: ['GERENTE', 'FUNCIONARIO'] },
+  { href: '/orcamentos', label: 'Orçamentos', roles: ['GERENTE', 'FUNCIONARIO'] },
+  { href: '/funcionarios', label: 'Funcionários', roles: ['GERENTE'] },
+  { href: '/contratos', label: 'Contratos', roles: ['GERENTE'] },
+  { href: '/relatorios', label: 'Relatórios', roles: ['GERENTE'] },
+  { href: '/configuracoes', label: 'Configurações', roles: ['GERENTE'] },
 ]
 
 interface SidebarProps {
